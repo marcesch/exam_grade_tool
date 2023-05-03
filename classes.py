@@ -2,9 +2,12 @@ import csv
 
 from student import Student
 from exam import Exam, Cateogry
+import typing
 import os
 import logging
 import shutil
+import openpyxl
+import time
 
 FOLDERPATH = "./tmp/klassen/"
 
@@ -17,6 +20,8 @@ TODO: sanitize / ... students names... what if there are sume ugly shit thigns l
 
 TODO: when should I store stuff?
 
+TODO cna python also handle xlsx files? might be a little bit more convenient than using csv... e.g. when creating report
+
 """
 
 
@@ -24,7 +29,7 @@ class Class:
     def __init__(self, name: str, term: str, year: int):
         self.students: list[Student] = []
         self.exams: list[Exam] = []
-        self.categories: list[Cateogry] = {}
+        self.categories: list[Cateogry] = []
         self.name: str = name
         if (term.lower() == "hs"):
             self.term: str = term.upper()
@@ -39,6 +44,8 @@ class Class:
         self.filename_base_exam = ""
         self.update_filenames()
         self.folder_shadow = FOLDERPATH + "/.trash/"
+        self.report_id = 0
+        self.supported_filetypes = ["xlsx", "csv"]
 
         if not os.path.exists(self.filename_base_exam):
             os.makedirs(self.filename_base_exam)
@@ -55,9 +62,12 @@ class Class:
         """
 
         # TODO ask selina for her preferences regarding layout of files
-        self.filename_class_base = FOLDERPATH + str(self.year) + "_" + self.term.upper() + "_" + self.name
+        classname_complete = str(self.year) + "_" + self.term.upper() + "_" + self.name
+        self.filename_class_base = FOLDERPATH + classname_complete
         self.filename_class = self.filename_class_base + ".csv"
+        # or use self.filename_class = self.filename_class_base + "/" + classname_complete + ".csv"
         self.filename_base_exam = self.filename_class_base + "/pruefungen/"
+
 
 
     def update_semester(self):
@@ -67,6 +77,7 @@ class Class:
         updates the semester by one term
         creates new file for grades
         """
+        self.report_id = 0
         oldterm = self.term
         oldyear = self.year
         if self.term == "hs":
@@ -129,7 +140,7 @@ class Class:
 
             # move "old" student's database to trash-folder
             logging.info("Moving old database to trash folder")
-            shutil.move(self.filename_class, self.folder_shadow)
+            shutil.move(self.filename_class, f"{self.folder_shadow}{time.time()/60}_{self.filename_class}")
         except:
             logging.info(f"No old file found")
 
@@ -249,25 +260,27 @@ class Class:
         self.students.remove(student_in_db)
         self.store_to_database()
 
-    def add_exam_category(self, exam_category: str, weight, grading_type="default"):
-        """
-        probably use a dictionary to keep track of exam categories
-        :param exam_cateogry:
-        :param weight:
-        :return:
-        """
 
-        # TODO DO NOT ONLY USE EXAM CATEGORY AS ID -- USE ALSO TERM AND YEAR
-        # => e.g., each term there will be a category redaction, but only the current ones should count
 
-        if exam_category in self.categories:
-            print(f"Category {exam_category} already in list. Aborting")
-            return
 
-        cat = Cateogry(exam_category, weight, grading_type)
-        self.categories[exam_category] = cat
+    """
+    ========================== EXAM CATEGORY PART    
+    """
 
-    def upadte_categories(self):
+    """
+    What to do as a weight invariant?
+    a) check sum(weights) at computation of final results?
+    b) check sum(weights) at initialization of categories
+    
+    => I think a) is more user-friendly, gonna do that.
+    """
+
+    def add_category(self, cat: dict[str: str]):
+        logging.info("Adding category")
+        self.categories.append(Cateogry(name=cat["name"], term=f"{self.year}{self.term.upper()}", classname=self.name,
+                                        weight=cat["weight"], grading_type=cat["grading_type"]))
+
+    def initialize_categories(self, exam_categories: list[dict[str: str]]):
         """
         Not quite sure how exactly to do that part -- It might be reasonable to use a wrapper function that checks that
         the weight of the categories always sum to 1 (invariant regarding the correctness) instead of letting user create
@@ -278,8 +291,51 @@ class Class:
         :return:
         """
 
-    def add_exam(self, exam_name: str, exam_category: str, max_points: int, points_needed_for_6: int, min_grade=1,
-                 max_grade=6, category_weight=None):
+        logging.info(f"Initializing list of categories")
+        for cat in exam_categories:
+            if "grading_type" in cat:
+                self.categories.append(Cateogry(name=cat["name"], term=f"{self.year}{self.term.upper()}", classname=self.name, weight=cat["weight"], grading_type=cat["grading_type"]))
+            else:
+                self.categories.append(Cateogry(name=cat["name"], term=f"{self.year}{self.term.upper()}", classname=self.name, weight=cat["weight"]))
+
+    def upadte_categories(self, exam_categories: list[dict[str: str]]):
+        """
+        Not quite sure how exactly to do that part -- It might be reasonable to use a wrapper function that checks that
+        the weight of the categories always sum to 1 (invariant regarding the correctness) instead of letting user create
+        categories individually
+
+        Downside: need to create all of them at once, always. But I think, GUI can help me here to make it reasonably nice to use
+
+        :argument exam_categories: list of exam-category info. Use keys "name", "weight" and "grading_type"
+        :return:
+        """
+
+        # Check that sum always stays one -- what argumend should I get?
+        # maybe list with updated categories -- check that every existent category still exists (otherwise, exams get deleted!!!)
+
+        new_names = []
+        for cat in exam_categories:
+            new_names.append(cat["name"])
+
+        for old_cat in self.categories:
+            if old_cat.name not in new_names:
+                if len(old_cat.exams) != 0:
+                    raise RuntimeError(f"Cannot delete category {old_cat} as there is an exam in that cateogry.")
+
+        logging.info(f"Updating list of categories")
+        for cat in exam_categories:
+            if "grading_type" in cat:
+                self.categories.append(
+                    Cateogry(name=cat["name"], term=f"{self.year}{self.term.upper()}", classname=self.name,
+                             weight=cat["weight"], grading_type=cat["grading_type"]))
+            else:
+                self.categories.append(
+                    Cateogry(name=cat["name"], term=f"{self.year}{self.term.upper()}", classname=self.name,
+                             weight=cat["weight"]))
+
+
+    def add_exam(self, exam_name: str, exam_category: str, max_points: int, points_needed_for_6: int = None, min_grade=1,
+                 max_grade=6, achieved_points = None):
         """
 
         :param exam_name: e.g. Redaction 1
@@ -291,49 +347,260 @@ class Class:
         :return:
 
         TODO make sure to support whacky characters in name
-        # TODO add .csv file for that exam notes
-
+        # TODO store .csv file for that exam notes
+        TODO store csv with full names
+        TODO use special number like -1 to signify "don't count this exam" => what if category does not contain any exam for that studen?
         """
 
-        if not exam_category in self.categories:
-            if category_weight != None:
-                print(f"Creating new category {exam_category}")
-                cat = Cateogry(exam_category, category_weight)
-                self.categories[exam_category] = cat
-            else:
-                print(f"Error: Don't know {exam_category}. Aborting")
-                return
+        # TODO sanitize user inputs
 
-        cat: Cateogry = self.categories[exam_category]
-        cat.add_exam(exam_name, max_points, points_needed_for_6, min_grade, max_grade)
 
-    def update_grade(self, exam: str, student: Student):
+        # check if category is present:
+        category = None
+        for cat in self.categories:
+            if cat.name == exam_category:
+                category = cat
+                break
+        if category is None:
+            logging.warning(f"Did not find category. Creating new one. NEED TO SET WEIGHT MANUALLY!")
+            category = Cateogry(exam_category, self.term, self.name, weight=0)
+            self.categories.append(category)
+
+        new_exam = category.add_exam(exam_name, max_points, points_needed_for_6, min_grade, max_grade, achieved_points)
+
+        # computing grades
+        new_exam.compute_grades()
+
+        # storing that exam as csv
+        self.store_exam(new_exam)
+
+    def store_exam(self, exam: Exam, filetype = "xlsx"):
+        """
+        Stores the exam to disk. Most important function, as this allows manual overwrite
+        :param exam:
+        :param filetype:
+        :return:
         """
 
+        # sanitize file type
+        if filetype not in self.supported_filetypes:
+            logging.warning("Don't know that filetype. Using xlsx instead")
+            filetype = "xlsx"
+
+
+        output_name = self.filename_base_exam + exam.name
+        # check if an old exam with that name already exists - if yes, move it to trash
+
+        if os.path.exists(output_name):
+            logging.warning("Found old exam with same name. Moving the old one to the trash")
+            shutil.move(output_name, f"{self.folder_shadow}{time.time()/60}_{output_name}")
+
+        # store the exam to disk, given the chosen mode
+        if filetype == "xlsx":
+            output_name = output_name + ".xlsx"
+            workbook = openpyxl.Workbook()
+            worksheet = workbook.active
+
+            worksheet.cell(row=1, column=1, value="Nachname")
+            worksheet.cell(row=1, column=2, value="Vorname")
+            worksheet.cell(row=1, column=3, value="Punkte")
+            worksheet.cell(row=1, column=3, value="Note")
+
+            # write the data
+            for row, student in enumerate(self.students, start=2):
+                worksheet.cell(row=row, column=1, value=student.lastname)
+                worksheet.cell(row=row, column=2, value=student.firstname)
+                try:
+                    points = exam.points[student]
+                except:
+                    points = ""
+                worksheet.cell(row=row, column=3, value=points)
+                try:
+                    grade = exam.grades[student]
+                except:
+                    grade = ""
+                worksheet.cell(row=row, column=3, value=grade)
+
+                logging.info(f"Saved Exam grades to Excel sheet on location{output_name}")
+
+        else:
+            if filetype == "csv":
+                output_name = output_name + ".csv"
+                with open(output_name, "w", newline="") as file:
+                    writer = csv.writer(file)
+
+                    # write the headers
+                    writer.writerow(["Nachname", "Note exakt", "Punkte", "Note"])
+
+                    for student in self.students:
+                        try:
+                            points = exam.points[student]
+                        except:
+                            points = ""
+                        try:
+                            grade = exam.grades[student]
+                        except:
+                            grade = ""
+
+                        writer.writerow([student.lastname, student.firstname, points, grade])
+
+    def update_grade(self, exam: Exam, students: list[Student], new_grades: dict[Student, float], new_points: dict[Student, float], computation_mode = "linear"):
+        """
+        Let's a user update a student's grade, either by letting the program recompute the grade based on their points or manually
+        overwriting everything by setting the grades. Gives priority to recalculating stuff by my program
         :param exam:
         :param student:
         :return:
         """
 
-        if student not in self.students:
-            raise RuntimeWarning("Student not found in this class")
-        if exam not in self.exams:
-            raise RuntimeWarning("Exam not found. Make sure to first create a new exam")
+        for student in students:
+            if student not in self.students:
+                raise RuntimeError(f"Don't know that student {student}. Did you forget to add it to the class {self.name}?")
+            # give precedence for letting my program recalculating instead of setting manual grades
+            if student in new_points:
+                exam.grades[student] = exam.compute_single_grade(new_points[student], computation_mode)
+            else:
+                if student in new_grades:
+                    exam.grades[student] = new_grades[student]
+                else:
+                    raise logging.error(f"Could not set grade for student {student.firstname} {student.lastname} as they are not in either provided list")
 
-        # TOD how to keep the mapping student -> grade? Dict or always load from csv?
+        # store exam to disk
+        self.store_exam(exam)
 
-        raise NotImplementedError
 
-    def create_grade_report(self):
+
+    def create_grade_report(self, output_location: str = None, output_name: str = None,  output_type = "xlsx"):
         """
         creates new report, i.e. computes average grades for each student
+        :argument output_location: location where final report should be stored
         :return:
         """
 
-        """
-        probably iterate over each category over each exam or so -- support students not taking exams
-        """
+        # TODO thoroughly test this function!!!
 
-        # TODO check that the category weights sum to 1!
+        if output_type != "xlsx" or output_type != "csv":
+            logging.error("Don't know that file type. Using xlsx instead")
 
-        raise NotImplementedError
+        if not self.categories:
+            raise RuntimeError("Don't have any exams stored, can not generate grade report")
+
+        logging.info("Creating exam report, calculating final grades")
+
+        total_grades: dict[Student, float] = {}
+        for student in self.students:
+            exams_per_cat: dict[Cateogry, list[Exam]] = {}
+            empty_cat = []
+            # collect all exams
+            for cat in self.categories:
+                if not cat.exams:
+                    empty_cat.append(cat)
+                else:
+                    exams_taken: Exam = []
+                    for exam in cat.exams:
+                        if exam.grades[student] != -1:
+                            exams_taken.append(exam)
+                    if not exams_taken:
+                        empty_cat.append(cat)
+                    else:
+                        exams_per_cat[cat] = exams_taken
+
+
+            if empty_cat:
+                logging.info(f"Student {student} did not take all exams necessary for easy computation of grade. Might want to recheck this grade manually")
+
+            # for all those categories where there is no exam seen, I need to add a scaling factor -- see above
+
+            weighted_per_cat: dict[Cateogry, float] = {}
+            for cat in exams_per_cat:
+                # compute "average" grade for each category, according to grading type fixed in category
+                weighted_per_cat[cat] = cat.aggregate_grades(exams_per_cat[cat])
+
+            # compute rescaling factor, if a student missed all exams from a given category
+            # rescale everything: w1, w2, w3, w4 s.t. sum(wi) = 1 ==> if c1 is not present for some student,
+            # use w2 + (w1/(4-1), w3 + w1/(4-1), w4 + w1/(4-1)
+            # replace w1 by sum(empty_cat.weights) and 4-1 by len(exams_per_cat) - 1
+            scaling_factor = 0
+            for cat in empty_cat:
+                scaling_factor = scaling_factor + cat.weight
+            scaling_factor = scaling_factor / (len(exams_per_cat)-1)
+
+            # make sure that I did not screw up
+            debug_sum = 0
+            for cat in weighted_per_cat:
+                debug_sum = debug_sum + cat.weight + scaling_factor
+            assert debug_sum == 1
+
+            # now, compute final grade for that student
+            grade_for_student = 0
+            for cat in weighted_per_cat:
+                grade_for_student = grade_for_student + (cat.weight + scaling_factor) * weighted_per_cat[cat]
+
+            # TODO ugly assert statement -- how to deal with different max / min grades?
+            # TODO ignoring for now, in Switzerland we have 1 - 6. No discussion there
+
+            assert grade_for_student >= 1 and grade_for_student <= 6
+
+            total_grades[student] = grade_for_student
+
+            self.students = sorted(self.students, key=lambda student: student.lastname)
+
+        rounded_grades = [round(total_grades[student] * 4) / 4 for student in total_grades]
+
+        if output_location == None:
+            logging.info(f"Received no output location for the grade report. Using the default location {self.filename_class_base}")
+            output_location = self.filename_class_base
+        if not output_location.endswith("/"):
+            output_location = output_location + "/"
+
+
+        if output_name == None:
+            output_name = f"{self.name}_report{self.report_id:02}"
+            self.report_id = self.report_id + 1
+            logging.info(f"Using default output name {output_name}")
+
+        if output_type == "xlsx":
+            if not output_name.endswith(".xlsx"):
+                if output_name.endswith(".csv"):
+                    logging.warning("Got .csv as file ending. Ignoring the user input and choosing .xlsx instead (try changing mode to csv, if you want to store the file as a csv instead)")
+                    output_name = output_name[:-4]
+                output_name = output_name + ".xlsx"
+
+                workbook = openpyxl.Workbook()
+                worksheet = workbook.active
+
+                worksheet.cell(row=1, column=1, value="Nachname")
+                worksheet.cell(row=1, column=2, value="Vorname")
+                worksheet.cell(row=1, column=3, value="Note Exakt")
+                worksheet.cell(row=1, column=3, value="Note Gerundet")
+
+                # write the data
+                for row, student in enumerate(self.students, start=2):
+                    worksheet.cell(row=row, column=1, value=student.lastname)
+                    worksheet.cell(row=row, column=2, value=student.firstname)
+                    worksheet.cell(row=row, column=3, value=total_grades[student])
+                    worksheet.cell(row=row, column=3, value=total_grades[row-2])
+
+                workbook.save(output_location + output_name)
+                logging.info(f"Saved Excel sheet with results to {output_location + output_name}")
+
+        else:
+            if output_type == "csv":
+                if not output_name.endswith(".csv"):
+                    if output_name.endswith(".xlsx"):
+                        logging.warning(
+                            "Got .xlsx as file ending. Ignoring the user input and choosing .csv instead (try changing mode to xlsx, if you want to store the file as a Excel sheet instead)")
+                        output_name = output_name[:-5]
+                    output_name = output_name + ".csv"
+
+                    with open(output_location + output_name, "w", newline="") as file:
+                        writer = csv.writer(file)
+
+                        # write the headers
+                        writer.writerow(["Nachname", "Note exakt", "Note gerundet"])
+
+                        # write the data
+                        for i, student in enumerate(self.students):
+                            writer.writerow([student.lastname, student.firstname, total_grades[student], rounded_grades[i]])
+            else:
+                raise RuntimeError("Unknown output type. Use xlsx or csv, instead")

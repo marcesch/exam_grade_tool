@@ -1,10 +1,25 @@
 import logging
 from student import Student
+import numpy as np
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+import matplotlib.pyplot as plt
 
+
+
+"""
+TODO exam modes:
+- best n-1 of n
+- normal
+- only if it improves grade
+- voluntary / make way to "delete" exam
+- absolut bonus (e.g. +0.25 or so)
+
+"""
 
 class Exam:
-    def __init__(self, name: str, term: str, classname: str, category: str, max_points: int, points_needed_for_6: int, min_grade: int = 1,
-                 max_grade=6):
+    def __init__(self, name: str, term: str, classname: str, category: str, max_points: int, points: dict[Student, int], points_needed_for_6: int = None,
+                 min_grade: int = 1, max_grade=6, grades: dict[Student, float] = {}, grade_computation = "linear"):
         self.name = name
         # term = hs23 etc.
         self.term = term
@@ -16,7 +31,11 @@ class Exam:
             logging.info(f"Exa: changing default for min_grade")
         self.min_grade = min_grade
         self.max_grade = max_grade
-        self.grades: dict[Student, float] = {}
+        self.points = points
+        self.computation_strategy = grade_computation
+        if grades != {}:
+            logging.warning("Manually overwriting grades with user input. Might be inconsistent with points received by students")
+        self.grades: dict[Student, float] = grades
 
         if max_points < points_needed_for_6:
             raise RuntimeWarning("Maximum amount of points should be smaller than points needed for 6")
@@ -28,6 +47,50 @@ class Exam:
         if min_grade > max_grade:
             logging.error("Received higher min_grade than max_grade")
 
+
+    def compute_single_grade(self, points):
+        """
+
+        :param points:
+        :return:
+        """
+        if points > self.max_points:
+            logging.warning("Got too many points, capping at maximum")
+            points = self.max_points
+
+        if self.computation_strategy == "linear":
+            grade = self.min_grade + (self.max_grade - self.min_grade) * points / self.points_needed_for_6
+            grade = round(grade, 2) # TODO give precision
+            if grade >= 6:
+                grade = 6
+        else:
+            raise NotImplementedError("Did not implement other ways to compute a grade yet")
+
+        return grade
+
+    def compute_grades(self):
+        """
+        Using the points, compute the corresponding grades according to grade_computation strategy
+        :return:
+        """
+
+        old_grades = self.grades
+
+        for student in self.points:
+            self.grades[student] = self.compute_single_grade(self.points[student])
+
+        student_changes = []
+        for student in old_grades:
+            if student not in self.grades or self.grades[student] != old_grades[student]:
+                student_changes.append(student)
+
+        for student in self.grades:
+            if student not in old_grades:
+                student_changes.append(student)
+
+        if old_grades != self.grades:
+            logging.warning(f"Grades changed after this update for the following students: \n{student_changes}")
+
     def add_grade_manually(self, student: Student, grade: float):
         """
         Manually add grade (used to overwrite stuff). Callers job to ensure student is in class
@@ -38,8 +101,10 @@ class Exam:
 
         # TODO boundary checks on grade
 
+        if grade < self.min_grade or grade > self.max_grade:
+            logging.warning("Manually overwriting with an illegal grade")
+
         self.grades[student] = grade
-        raise NotImplementedError
 
     def add_grade_from_points(self, student: Student, points: int):
         """
@@ -49,35 +114,62 @@ class Exam:
         :return:
         """
         self.grades[student] = self.compute_grade(points)
-        raise NotImplementedError
 
     def add_grades_mass_import(self):
         """
         Used to import entire table from frontend, I guess?
         :return:
         """
+        raise NotImplementedError
 
-    def compute_grade(self, points_reached, modus="default") -> float:
+    def generate_summary_report(self, filename):
         """
-        :param points_reached: points a student reached.
-        :param modus: could potentially be used to use different grading scheme than linear
-        :return: grade based on points_needed_for_6
-
-        The convoluted formula is just a generalization of 1 + 5 * points_reached / points_for_6
-        retunrs unrounded float for precision reasons
+        Taken from chatGPT, might want to check how well that stuff works
+        :param filename:
+        :return:
         """
+        # Compute summary statistics
+        all_points = list(self.points.values())
+        all_grades = list(self.grades.values())
+        avg_points = np.mean(all_points)
+        median_points = np.median(all_points)
+        upper_quartile_points = np.percentile(all_points, 75)
+        lower_quartile_points = np.percentile(all_points, 25)
+        avg_grade = np.mean(all_grades)
+        median_grade = np.median(all_grades)
+        upper_quartile_grade = np.percentile(all_grades, 75)
+        lower_quartile_grade = np.percentile(all_grades, 25)
 
-        if points_reached > self.max_points:
-            logging.warning("Student received more points than possible")
+        # Create a histogram of points and grades
+        fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+        ax[0].hist(all_points)
+        ax[0].set_xlabel('Points')
+        ax[0].set_ylabel('Frequency')
+        ax[1].hist(all_grades)
+        ax[1].set_xlabel('Grades')
+        ax[1].set_ylabel('Frequency')
 
-        res = -1
-        if modus == "default":
-            res = self.min_grade + (self.max_grade - self.min_grade) * points_reached / self.points_needed_for_6
-        else:
-            raise RuntimeError("Don't know that modus... Aborting")
+        fig.savefig('histogram.png')
 
-        return res
 
+        # Generate a PDF report
+        c = canvas.Canvas(filename, pagesize=letter)
+        c.drawString(100, 700, f"Summary report for {self.name}")
+        c.drawString(100, 675, f"Average points: {avg_points:.2f}")
+        c.drawString(100, 650, f"Median points: {median_points:.2f}")
+        c.drawString(100, 625, f"Upper quartile points: {upper_quartile_points:.2f}")
+        c.drawString(100, 600, f"Lower quartile points: {lower_quartile_points:.2f}")
+        c.drawString(100, 575, f"Average grade: {avg_grade:.2f}")
+        c.drawString(100, 550, f"Median grade: {median_grade:.2f}")
+        c.drawString(100, 525, f"Upper quartile grade: {upper_quartile_grade:.2f}")
+        c.drawString(100, 500, f"Lower quartile grade: {lower_quartile_grade:.2f}")
+        c.drawImage('histogram.png', 100, 350, width=400, height=200)
+        c.showPage()
+        c.save()
+
+        # TODO change location where both files are stored
+        # Save the histogram plot as a separate PNG file
+        fig.savefig('histogram.png')
 
 class Cateogry:
     def __init__(self, name: str, term: str, classname: str, weight: float, grading_type: str = "default"):
@@ -89,26 +181,51 @@ class Cateogry:
         :param weight: weight in float of entire cateogry
         :param grading_type: e.g. best 4 of 5 or so
         """
+
+        # e.g. redaction
         self.name = name
         # e.g. hs23
         self.term = term
         # e.g. 4a
         self.classname = classname
+        # self.id = f"{self.term}_{self.classname}_{self.name}"
+        # TODO this is only used for the exams themselves
         self.term = term
         self.weight = weight
-        self.grading_type = grading_type
         self.exams = []
-        raise NotImplementedError
+        self.grading_types = ["default"]
+        self.grading_type = grading_type
+        if self.grading_type not in self.grading_types:
+            logging.error("Unknown grading type. Using default instead")
+            self.grading_type = "default"
 
-    def add_exam(self, exam_name: str, max_points: int, points_needed_for_6: int, min_grade: int=1, max_grade=6):
+    def add_exam(self, exam_name: str, max_points: int, points_needed_for_6: int = None, min_grade: int=1, max_grade=6):
         """
 
         :param exam:
         :return:
         """
+
+        if points_needed_for_6 is None:
+            points_needed_for_6 = max_points
         exam = Exam(exam_name, self.name, max_points, points_needed_for_6, min_grade, max_grade)
         self.exams.append(exam)
+        return exam
 
     def update_grading_type(self):
         raise NotImplementedError
+
+    def aggregate_grades(self, exams_to_be_counted):
+        """
+        aggregates the final grade for all exams. Usually simply average, but support other types (based on self.grading_tpe)
+        :param exams_to_be_counted:  list for all exams that should be counted for a given student
+        :return:
+        """
+
+        # TODO support other types for grading
+
+        if self.grading_type == "default":
+            return sum(exams_to_be_counted) / len(exams_to_be_counted)
+        else:
+            raise NotImplementedError
 
