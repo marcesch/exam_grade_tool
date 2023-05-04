@@ -101,6 +101,11 @@ class Class:
         else:
             logging.error(f"Directory '{self.filename_base_exam}' already exists.")
 
+        # Reuse cateogries from previous semester, too.
+        old_categories = self.categories
+        self.categories = []
+        self.initialize_categories_from_old(old_categories)
+
     def store_to_database(self):
         """
         Stores the old class file to the trash-folder and stores an updated version
@@ -153,6 +158,16 @@ class Class:
             # Write each student's first name and last name to the CSV file
             for student in self.students:
                 writer.writerow([student.lastname, student.firstname])
+
+    def get_student(self, first: str, last: str):
+        """
+        Really just a wrapper function for contains_student
+        :param first:
+        :param last:
+        :return:  Student object corresponding to the firstname / lastname combination
+        """
+        _, student = self.contains_student(first, last, return_student=True)
+        return student
 
     def contains_student(self, first: str, last: str, return_student=False):
         """
@@ -275,12 +290,39 @@ class Class:
     => I think a) is more user-friendly, gonna do that.
     """
 
+
+    def contains_category(self, name: str):
+        for cat in self.categories:
+            if cat.name == name:
+                return True
+        return False
+
+    def find_category(self, name: str):
+        for cat in self.categories:
+            if cat.name == name:
+                return cat
+
+        raise RuntimeError(f"Could not find that cateogry in the list {self.categories}")
+
+    def remove_category(self, cat: str):
+        if self.contains_category(cat):
+            category = self.find_category(cat)
+            self.categories.remove(category)
+        else:
+            raise RuntimeError(f"Could not find that category in the list {self.categories}")
+
     def add_category(self, cat: dict[str: str]):
         logging.info("Adding category")
+        # TODO check if categroy already exists
+        grading_type = cat["grading_type"] if "grading_type" in cat else "default"
         self.categories.append(Cateogry(name=cat["name"], term=f"{self.year}{self.term.upper()}", classname=self.name,
-                                        weight=cat["weight"], grading_type=cat["grading_type"]))
+                                        weight=cat["weight"], grading_type=grading_type))
 
-    def initialize_categories(self, exam_categories: list[dict[str: str]]):
+    def initialize_categories_from_old(self, exam_categories: list[Cateogry]):
+        for cat in exam_categories:
+            self.categories.append(Cateogry(cat.name, f"{self.year}{self.term.upper()}", self.name, cat.weight, cat.grading_type))
+
+    def initialize_categories(self, exam_categories: list[dict[str: typing.Any]]):
         """
         Not quite sure how exactly to do that part -- It might be reasonable to use a wrapper function that checks that
         the weight of the categories always sum to 1 (invariant regarding the correctness) instead of letting user create
@@ -291,12 +333,14 @@ class Class:
         :return:
         """
 
+        # TODO deal with same keys -- different entries -> raise exception or so
+
+        # TODO check for missing weights (or let caller handle that)
+
         logging.info(f"Initializing list of categories")
         for cat in exam_categories:
-            if "grading_type" in cat:
-                self.categories.append(Cateogry(name=cat["name"], term=f"{self.year}{self.term.upper()}", classname=self.name, weight=cat["weight"], grading_type=cat["grading_type"]))
-            else:
-                self.categories.append(Cateogry(name=cat["name"], term=f"{self.year}{self.term.upper()}", classname=self.name, weight=cat["weight"]))
+            grading_type = cat["grading_type"] if "grading_type" in cat else "default"
+            self.categories.append(Cateogry(name=cat["name"], term=f"{self.year}{self.term.upper()}", classname=self.name, weight=cat["weight"], grading_type=grading_type))
 
     def upadte_categories(self, exam_categories: list[dict[str: str]]):
         """
@@ -324,18 +368,17 @@ class Class:
 
         logging.info(f"Updating list of categories")
         for cat in exam_categories:
-            if "grading_type" in cat:
-                self.categories.append(
-                    Cateogry(name=cat["name"], term=f"{self.year}{self.term.upper()}", classname=self.name,
-                             weight=cat["weight"], grading_type=cat["grading_type"]))
+            if self.contains_category(cat["name"]):
+                cat_in_list = self.find_category(cat["name"])
+                cat_in_list.weight = cat["weight"]
+                if "grading_type" in cat:
+                    cat_in_list.grading_type = cat["grading_type"]
             else:
-                self.categories.append(
-                    Cateogry(name=cat["name"], term=f"{self.year}{self.term.upper()}", classname=self.name,
-                             weight=cat["weight"]))
+                self.add_category(cat)
 
 
     def add_exam(self, exam_name: str, exam_category: str, max_points: int, points_needed_for_6: int = None, min_grade=1,
-                 max_grade=6, achieved_points = None):
+                 max_grade=6, achieved_points = {}):
         """
 
         :param exam_name: e.g. Redaction 1
@@ -354,6 +397,8 @@ class Class:
 
         # TODO sanitize user inputs
 
+        # TODO make sure that exam names are unique
+
 
         # check if category is present:
         category = None
@@ -366,7 +411,8 @@ class Class:
             category = Cateogry(exam_category, self.term, self.name, weight=0)
             self.categories.append(category)
 
-        new_exam = category.add_exam(exam_name, max_points, points_needed_for_6, min_grade, max_grade, achieved_points)
+        new_exam = category.add_exam(exam_name, term=f"{self.term.upper()}_{self.year}", classname=self.name, max_points=max_points, points_needed_for_6=points_needed_for_6,
+                                     min_grade=min_grade, max_grade=max_grade, achieved_points=achieved_points)
 
         # computing grades
         new_exam.compute_grades()
@@ -485,6 +531,12 @@ class Class:
         if not self.categories:
             raise RuntimeError("Don't have any exams stored, can not generate grade report")
 
+        sum_weights = 0
+        for cat in self.categories:
+            sum_weights = sum_weights + cat.weight
+        if sum_weights != 1:
+            raise RuntimeError("Sum of weights must be 1. Aborting")
+
         logging.info("Creating exam report, calculating final grades")
 
         total_grades: dict[Student, float] = {}
@@ -514,7 +566,7 @@ class Class:
             weighted_per_cat: dict[Cateogry, float] = {}
             for cat in exams_per_cat:
                 # compute "average" grade for each category, according to grading type fixed in category
-                weighted_per_cat[cat] = cat.aggregate_grades(exams_per_cat[cat])
+                weighted_per_cat[cat] = cat.aggregate_grades(student, exams_per_cat[cat])
 
             # compute rescaling factor, if a student missed all exams from a given category
             # rescale everything: w1, w2, w3, w4 s.t. sum(wi) = 1 ==> if c1 is not present for some student,

@@ -1,0 +1,28 @@
+# README
+
+## TODOs
+Collection of ideas, "feature requests", TODOs in code, ..
+
+- [3] Distinguish between filesystem
+- [2] sanitize user inputs everywhere
+- [2] clean up code
+- [2] make nices summaries
+- [1] consistenly use xlsx as default instead of csv
+- [1] test the shit out of the bugger
+- [1] do frontend
+- [1] deal with loading / storing at startup / different times / ...
+- [4] do the thing securely, like encrypting exam data, ...
+- [1] protect all files using `os.chmod(filename, 0o444)` using 644 (root can edit)
+- [1] use more functions for staorage -- don't do it inline.
+- [1] remove all stores inside backend code -- let the caller take care of that
+- [3] proper logging everywhere
+- [3] printing functions
+- [1] make sure implementation can deal with student not writing exams
+- [1] add category mode 1 streichnote
+
+### Disk thoughts
+
+1. Keeping multiple classes: can either store a dict / list using jsonpickle or so of everything needed. Alternatively, add class
+based on filename. I prefer the first solution (not as clean, probably, but as long as the user is not stupid enough to delete
+the files, I should be fine)
+
