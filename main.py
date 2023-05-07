@@ -44,6 +44,10 @@ class Overview:
 
             => Does it also load exams themselves?
 
+            => when does it get called?
+            - a) on startup, on all exams
+            - b) upon GUI action of user (select to load class xyz)
+
             :return:
             """
 
@@ -52,8 +56,12 @@ class Overview:
             """
             loads list of classes from memory
             => how to deal with multiple intstances of classes? => mb load all of them, let user decide which to pick.
+
+            => when does it get called? on startup, probably?
             :return:
             """
+
+
 
             # Loop through all files in the directory
             for filename in os.listdir(FOLDERPATH):

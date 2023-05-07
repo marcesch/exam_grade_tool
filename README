@@ -38,6 +38,7 @@ categorization:
 - [1] store the bugger on github -- maybe use protonmail for reasons.
 - [2] deal with folderpath reasonably
 
+
 ### Disk thoughts
 
 1. Keeping multiple classes: can either store a dict / list using jsonpickle or so of everything needed. Alternatively, add class
