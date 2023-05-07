@@ -1,4 +1,7 @@
 # This is a sample Python script.
+import csv
+import logging
+import os
 
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
@@ -21,105 +24,75 @@ need to store information about the category weights / ...
 => Probably need to create new file for loading / storing stuff. Keep it minimal, loading takes quite a long time...
 TODO don't always store everything on disk, only on major changes and on shutdown!
 
-TODO add fucntionality to creat exam summary as a PDF or so (average, mean, quartils, standard deviation, ..)
+TODO add fucntionality to create exam summary as a PDF or so (average, mean, quartils, standard deviation, ..)
 """
 
-def test_class_management():
+
+FOLDERPATH = "./tmp/klassen/"
+
+class Overview:
+    """
+    keep list of classes, ...
 
     """
-    Not sure what to do with this stuff yet -- mainly just test some things
-    :return:
-    """
+    def __init__(self):
+        self.classes = []
 
-    print("Starting program")
+        def load_categories(curr_class: Class):
+            """
+            Loads all categories for a class object and stores it in the curr_class.categories list.
 
-    class_6a = Class("6a", "hs", 2016)
+            => Does it also load exams themselves?
 
-    students = [
-        {"firstname": "Noe", "lastname" : "Matumona"},
-        {"firstname": "Nicolas", "lastname": "Zillig"},
-        {"firstname": "Dominik", "lastname": "Sarman"},
-        {"firstname": "Alina", "lastname": "Kohler"},
-        # {"firstname": "Renato", "lastname": "Meier"},
-        # {"firstname": "Adrian", "lastname": "Pfeiffer"},
-        # {"firstname": "Nina", "lastname": "Matumona"},
-        # {"firstname": "Marlene", "lastname": "asdf"},
-        # {"firstname": "Nina", "lastname": "Kohler"},
-        # {"firstname": "Noe", "lastname": "Matumona"},
-    ]
-
-    class_6a.initialize_new_class(students)
-
-    class_6a.add_student("Marcel", "Schmid")
-    class_6a.remove_student("Nicolas", "Zillig")
-
-    print("Starting to store to DB")
-    class_6a.store_to_database()
-
-    class_6a.update_semester()
-    print(f"Semester: {class_6a.term}, year: {class_6a.year}\n {class_6a.filename_class}")
-    class_6a.update_semester()
-    print(f"Semester: {class_6a.term}, year: {class_6a.year}\n {class_6a.filename_class}")
+            :return:
+            """
 
 
+        def load_classes():
+            """
+            loads list of classes from memory
+            => how to deal with multiple intstances of classes? => mb load all of them, let user decide which to pick.
+            :return:
+            """
 
-    categories = [
-        {"name": "oral", "weight" : 0.3, "grading_type" : "default"},
-        {"name": "redaction", "weight": 0.2},
-        {"name": "voci", "weight" : 0.3},
-    ]
+            # Loop through all files in the directory
+            for filename in os.listdir(FOLDERPATH):
+                # Check if the file has a .csv extension
+                if filename.endswith(".csv"):
+                    year, term, name = filename.split("_")
+                    try:
+                        curr_class = Class(name, term, int(year))
+                        self.classes.append(curr_class)
+                        with open('filename.csv', newline='') as csvfile:
+                            reader = csv.reader(csvfile)
+                            first_row = next(reader)
+                            if "Nachname" not in first_row:
+                                raise RuntimeError("Expect the first row to contain the word Nachname")
+                            for row in reader:
+                                last = row[0]
+                                first = row[1]
+                                curr_class.add_student(first=first, last=last)
 
-    class_6a.initialize_categories(categories)
-    class_6a.add_category({"name": "grammaire", "weight": 0.2})
-    class_6a.add_category({"name": "asdf", "weight": 0.5})
-    class_6a.remove_category("asdf")
+                        # get report_id (to make sure not to create reports multiple times)
+                        max_report_no = 0
+                        for file in os.path.join(FOLDERPATH, filename[:-4]):
+                            # TODO test this functionality
+                            if "report" in file:
+                                try:
+                                    if int(file[file.find("report"):file.find("report")+2]) > max_report_no:
+                                        max_report_no = int(file[file.find("report"):file.find("report")+2])
 
+                                except:
+                                    logging.warning(f"Could not extract report number from filename {file}")
+                        curr_class.report_id = max_report_no
 
-    grades_noe = [25, 25, 15, 15, 15, 10, 35, 35]
-    grades_nici = [15 ,15, 10, 10, 9, 10, 20, 20]
-    grades_dominik = [8, 22, 12, 5, 9, 12, 14, 17]
-    grades_alina = [0, 0, 0, 0, 0, 0, 0, 0]
+                    except:
+                        logging.error(f"Could not create class from {filename}. \n"
+                              f"Make sure that the file is named correctly (YEAR_TERM_NAME) and does contain a list of students.\n"
+                              f"Make sure, the first row of the Row contains a field Nachname")
 
-    noe = class_6a.get_student("Noe", "Matumona")
-    nici = class_6a.get_student("Nicolas", "Zillig")
-    dominik = class_6a.get_student("Dominik", "Sarman")
-    alina = class_6a.get_student("Alina", "Kohler")
+            raise NotImplementedError
 
-    redaction1 = {noe: grades_noe[0], nici: grades_nici[0], dominik: grades_dominik[0], alina: grades_alina[0]}
-    redaction2 = {noe: grades_noe[1], nici: grades_nici[1], dominik: grades_dominik[1], alina: grades_alina[1]}
-    voci1 = {noe: grades_noe[2], nici: grades_nici[2], dominik: grades_dominik[2], alina: grades_alina[2]}
-    voci2 = {noe: grades_noe[3], nici: grades_nici[3], dominik: grades_dominik[3], alina: grades_alina[3]}
-    voci3 = {noe: grades_noe[4], nici: grades_nici[4], dominik: grades_dominik[4], alina: grades_alina[4]}
-    orale = {noe: grades_noe[5], nici: grades_nici[5], dominik: grades_dominik[5], alina: grades_alina[5]}
-    grammaire1 = {noe: grades_noe[6], nici: grades_nici[6], dominik: grades_dominik[6], alina: grades_alina[6]}
-    grammaire2 = {noe: grades_noe[7], nici: grades_nici[7], dominik: grades_dominik[7], alina: grades_alina[7]}
-
-    class_6a.add_exam("redaction 1", "redaction", 25, points_needed_for_6=22, achieved_points=redaction1)
-    class_6a.add_exam("redaction 2", "redaction", 25, points_needed_for_6=23, achieved_points=redaction2)
-    class_6a.add_exam("voci 1", "voci", 15, achieved_points=voci1)
-    class_6a.add_exam("voci 2", "voci", 15, achieved_points=voci2)
-    class_6a.add_exam("voci 3", "voci", 15,  achieved_points=voci3)
-    class_6a.add_exam("orale", "oral", 10,  achieved_points=orale)
-    class_6a.add_exam("grammaire 1", "grammaire", 35, 30, achieved_points=grammaire1)
-    class_6a.add_exam("grammaire 2", "grammaire", 35, 28, achieved_points=grammaire2)
-
-    # TODO IT DID NOT STORE THE EXAMS AS CSV!
-
-    class_6a.create_grade_report()
-
-    class_6a.upadte_categories([{"name": "grammaire", "weight": 0.3}, {"name": "voci", "weight" : 0.1}])
-    try:
-        class_6a.create_grade_report()
-    except Exception as e:
-        print(e)
-
-    class_6a.update_semester()
-    print(f"Semester: {class_6a.term}, year: {class_6a.year}\n {class_6a.filename_class}")
-    class_6a.update_semester()
-    print(f"Semester: {class_6a.term}, year: {class_6a.year}\n {class_6a.filename_class}")
-    class_6a.store_to_database()
-
-    print("Succesfull run")
 
 
 
@@ -129,8 +102,7 @@ def test_exam_creation():
 
 
 def main():
-    test_class_management()
-
+    raise NotImplementedError
 
 
 main()

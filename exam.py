@@ -51,7 +51,6 @@ class Exam:
 
     def compute_single_grade(self, points):
         """
-
         :param points:
         :return:
         """
@@ -258,7 +257,6 @@ class Cateogry:
         # TODO what to do when students are not in all exams etc.
         # => I think caller takes care of it
 
-        print(type(exams_to_be_counted), exams_to_be_counted)
         if self.grading_type == "default":
             sum = 0
             for exam in exams_to_be_counted:

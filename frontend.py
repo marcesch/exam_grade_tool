@@ -41,10 +41,6 @@ class TableInput(tk.Frame):
         return data
 
 
-"""
-
-
-
 # Create a new Tkinter window
 root = tk.Tk()
 
@@ -59,4 +55,3 @@ button.pack(side="bottom")
 # Run the main event loop
 root.mainloop()
 
-"""

@@ -43,7 +43,7 @@ class Class:
         self.filename_class = ""
         self.filename_base_exam = ""
         self.update_filenames()
-        self.folder_shadow = FOLDERPATH + "/.trash/"
+        self.folder_shadow = FOLDERPATH + ".trash/"
         self.report_id = 0
         self.supported_filetypes = ["xlsx", "csv"]
 
@@ -52,8 +52,17 @@ class Class:
         else:
             logging.warning(f"Directory '{self.filename_base_exam}' already exists.")
 
+    def load_data(self):
+        """
+        load data for a given class -- list of categories and all exams
+        :return:
+        """
+        # TODO first need to settle on layout for exam overview -- I prefer keeping everything in one Excel.
+        raise NotImplementedError
+
     def update_name(self, new_name: str):
         self.name = new_name
+        # TODO rename stored file containing list of class, otherwise name gets "rewritten" once program gets loaded.
 
     def update_filenames(self):
         """
@@ -67,8 +76,6 @@ class Class:
         self.filename_class = self.filename_class_base + ".csv"
         # or use self.filename_class = self.filename_class_base + "/" + classname_complete + ".csv"
         self.filename_base_exam = self.filename_class_base + "/pruefungen/"
-
-
 
     def update_semester(self):
         """
@@ -390,7 +397,7 @@ class Class:
         :return:
 
         TODO make sure to support whacky characters in name
-        # TODO store .csv file for that exam notes
+        TODO store .csv file for that exam notes
         TODO store csv with full names
         TODO use special number like -1 to signify "don't count this exam" => what if category does not contain any exam for that studen?
         """
@@ -420,13 +427,16 @@ class Class:
         # storing that exam as csv
         self.store_exam(new_exam)
 
-    def store_exam(self, exam: Exam, filetype = "xlsx"):
+    def store_exam(self, exam: Exam, filetype="xlsx"):
         """
         Stores the exam to disk. Most important function, as this allows manual overwrite
         :param exam:
         :param filetype:
         :return:
         """
+
+        # TODO remove debug statement
+        print("==========HERE==========")
 
         # sanitize file type
         if filetype not in self.supported_filetypes:
@@ -437,11 +447,15 @@ class Class:
         output_name = self.filename_base_exam + exam.name
         # check if an old exam with that name already exists - if yes, move it to trash
 
+        logging.info(f"Storing {exam.name}_{exam.term} to {output_name}.{filetype}")
+        print(f"Storing {exam.name}_{exam.term} to {output_name}.{filetype}")
+
         if os.path.exists(output_name):
             logging.warning("Found old exam with same name. Moving the old one to the trash")
             shutil.move(output_name, f"{self.folder_shadow}{time.time()/60}_{output_name}")
 
         # store the exam to disk, given the chosen mode
+        # TODO also store max points, points for 6 in exam
         if filetype == "xlsx":
             output_name = output_name + ".xlsx"
             workbook = openpyxl.Workbook()
@@ -450,7 +464,7 @@ class Class:
             worksheet.cell(row=1, column=1, value="Nachname")
             worksheet.cell(row=1, column=2, value="Vorname")
             worksheet.cell(row=1, column=3, value="Punkte")
-            worksheet.cell(row=1, column=3, value="Note")
+            worksheet.cell(row=1, column=4, value="Note")
 
             # write the data
             for row, student in enumerate(self.students, start=2):
@@ -465,9 +479,10 @@ class Class:
                     grade = exam.grades[student]
                 except:
                     grade = ""
-                worksheet.cell(row=row, column=3, value=grade)
+                worksheet.cell(row=row, column=4, value=grade)
 
                 logging.info(f"Saved Exam grades to Excel sheet on location{output_name}")
+                workbook.save(output_name)
 
         else:
             if filetype == "csv":
@@ -545,21 +560,22 @@ class Class:
             empty_cat = []
             # collect all exams
             for cat in self.categories:
-                if not cat.exams:
+                exams_taken = []
+                if len(cat.exams) == 0:
                     empty_cat.append(cat)
                 else:
-                    exams_taken: Exam = []
                     for exam in cat.exams:
-                        if exam.grades[student] != -1:
-                            exams_taken.append(exam)
-                    if not exams_taken:
-                        empty_cat.append(cat)
-                    else:
-                        exams_per_cat[cat] = exams_taken
-
+                        if student in exam.grades:
+                            if exam.grades[student] != -1:
+                                exams_taken.append(exam)
+                if len(exams_taken) == 0:
+                    empty_cat.append(cat)
+                else:
+                    exams_per_cat[cat] = exams_taken
 
             if empty_cat:
-                logging.info(f"Student {student} did not take all exams necessary for easy computation of grade. Might want to recheck this grade manually")
+                logging.info(f"Student {student} did not take all exams necessary for easy computation of grade. Skipping this student, add grade manually")
+                continue
 
             # for all those categories where there is no exam seen, I need to add a scaling factor -- see above
 
@@ -581,7 +597,7 @@ class Class:
             debug_sum = 0
             for cat in weighted_per_cat:
                 debug_sum = debug_sum + cat.weight + scaling_factor
-            assert debug_sum == 1
+            assert debug_sum == 1, f"Rescaled sum = {debug_sum}\n Skipped cateogries: {[cat.name for cat in empty_cat]}\nTaken categories{[cat.name for cat in exams_taken]}"
 
             # now, compute final grade for that student
             grade_for_student = 0
@@ -597,14 +613,15 @@ class Class:
 
             self.students = sorted(self.students, key=lambda student: student.lastname)
 
-        rounded_grades = [round(total_grades[student] * 4) / 4 for student in total_grades]
+        rounded_grades = {}
+        for student in total_grades:
+            rounded_grades[student] = round(total_grades[student] * 4) / 4
 
         if output_location == None:
             logging.info(f"Received no output location for the grade report. Using the default location {self.filename_class_base}")
             output_location = self.filename_class_base
         if not output_location.endswith("/"):
             output_location = output_location + "/"
-
 
         if output_name == None:
             output_name = f"{self.name}_report{self.report_id:02}"
@@ -624,14 +641,18 @@ class Class:
                 worksheet.cell(row=1, column=1, value="Nachname")
                 worksheet.cell(row=1, column=2, value="Vorname")
                 worksheet.cell(row=1, column=3, value="Note Exakt")
-                worksheet.cell(row=1, column=3, value="Note Gerundet")
+                worksheet.cell(row=1, column=4, value="Note Gerundet")
 
                 # write the data
                 for row, student in enumerate(self.students, start=2):
                     worksheet.cell(row=row, column=1, value=student.lastname)
                     worksheet.cell(row=row, column=2, value=student.firstname)
-                    worksheet.cell(row=row, column=3, value=total_grades[student])
-                    worksheet.cell(row=row, column=3, value=total_grades[row-2])
+                    if student in total_grades:
+                        worksheet.cell(row=row, column=3, value=total_grades[student])
+                        worksheet.cell(row=row, column=4, value=rounded_grades[student])
+                    else:
+                        logging.info(f"Skipping student {student}, don't have a grade for them")
+                        # row = row - 1
 
                 workbook.save(output_location + output_name)
                 logging.info(f"Saved Excel sheet with results to {output_location + output_name}")
@@ -655,4 +676,4 @@ class Class:
                         for i, student in enumerate(self.students):
                             writer.writerow([student.lastname, student.firstname, total_grades[student], rounded_grades[i]])
             else:
-                raise RuntimeError("Unknown output type. Use xlsx or csv, instead")
+                raise RuntimeError(f"Unknown output type {output_type}. Use xlsx or csv, instead")

@@ -3,26 +3,45 @@
 ## TODOs
 Collection of ideas, "feature requests", TODOs in code, ..
 
-- [3] Distinguish between filesystem
+categorization:
+[1]: important functionality to be added
+[2]: nice to have functionality, or doing things more properly / cleanly
+[3]: allowing stuff to be distributed cross platform and be used by more than just one user / one system
+[4]: nice-to-have-features if I want to build this thing BIG
+
+- [3] Distinguish between filesystem => use os.path.join() for filepaths, ...
 - [2] sanitize user inputs everywhere
 - [2] clean up code
-- [2] make nices summaries
-- [1] consistenly use xlsx as default instead of csv
+- [2] make nice exam summaries
+- [1] consistently use xlsx as default instead of csv
+    - Except for where I need to load information from the disk.
+- [1] permissions for files using `os.chmod(filename, 0o444), probably 0x664 (root can edit)
+    - RW for all exam data
+    - R on student list -- don't want users to mess with that
 - [1] test the shit out of the bugger
 - [1] do frontend
 - [1] deal with loading / storing at startup / different times / ...
 - [4] do the thing securely, like encrypting exam data, ...
-- [1] protect all files using `os.chmod(filename, 0o444)` using 644 (root can edit)
-- [1] use more functions for staorage -- don't do it inline.
+- [1] use more functions for storage -- don't do it inline.
+    - unclear what I meant here...
 - [1] remove all stores inside backend code -- let the caller take care of that
 - [3] proper logging everywhere
-- [3] printing functions
+- [2] printing functions for student / category / ... classes, makes debugging easier
 - [1] make sure implementation can deal with student not writing exams
-- [1] add category mode 1 streichnote
+- [1] add category mode streichnote
+- [2] data persistence: how and when to store what
+- [3] packaging -- create a single executable file from entire project
+    - need to restructure project in a reasonable way
+- [2] store all exams in same excel file instead of mulitple files
+- [4] Add functionality for restoring stuff from the .trash folder within program
+- [2] start "documentation" of workflows and project layout -- e.g., after calling method XY, class gets stored on disk automatically. After addign student, has to be invoked manually. Etc.
+- [1] store the bugger on github -- maybe use protonmail for reasons.
+- [2] deal with folderpath reasonably
 
 ### Disk thoughts
 
 1. Keeping multiple classes: can either store a dict / list using jsonpickle or so of everything needed. Alternatively, add class
 based on filename. I prefer the first solution (not as clean, probably, but as long as the user is not stupid enough to delete
 the files, I should be fine)
+=> settle on second, cleaner and less risk of users deleting important stuff. Also easier to fix, if they do.
 
