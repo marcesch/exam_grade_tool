@@ -52,6 +52,9 @@ class Class:
         else:
             logging.warning(f"Directory '{self.filename_base_exam}' already exists.")
 
+    def __str__(self):
+        return f"{self.name} {self.term.upper()}{self.year}"
+
     def load_data(self):
         """
         load data for a given class -- list of categories and all exams
@@ -62,6 +65,7 @@ class Class:
 
     def update_name(self, new_name: str):
         self.name = new_name
+        self.update_filenames()
         # TODO rename stored file containing list of class, otherwise name gets "rewritten" once program gets loaded.
 
     def update_filenames(self):
@@ -69,8 +73,8 @@ class Class:
         after seen a change (e.g. year / term / ...), need to adjust the filename
         :return:
         """
-
         # TODO ask selina for her preferences regarding layout of files
+        # TODO remove old files
         classname_complete = str(self.year) + "_" + self.term.upper() + "_" + self.name
         self.filename_class_base = FOLDERPATH + classname_complete
         self.filename_class = self.filename_class_base + ".csv"
@@ -118,8 +122,6 @@ class Class:
         Stores the old class file to the trash-folder and stores an updated version
         :return:
         """
-        # TODO this implementation litters the trash! Might want to do something against that
-
         students_old = []
         # load "old" student's database for comparison
         # Read the list of students from the CSV file
@@ -154,7 +156,7 @@ class Class:
             logging.info("Moving old database to trash folder")
             shutil.move(self.filename_class, f"{self.folder_shadow}{time.time()/60}_{self.filename_class}")
         except:
-            logging.info(f"No old file found")
+            logging.info(f"No old class list found on disk")
 
         # store "new" / current database under folderpath
         # Write the list of students to a CSV file
@@ -231,6 +233,9 @@ class Class:
         logging.warning(f"Removing all the files for class {self.name} {self.term} {self.year}. This action cannot be reverted.")
         os.remove(self.filename_class_base)
 
+        # put the old folder to the trash folder
+        shutil.move(self.filename_base_exam, f"{self.folder_shadow}{time.time() / 60}_{self.filename_class}")
+
         # remove the folder containing this classes exam
         for item in os.listdir(self.filename_base_exam):
             item_path = os.path.join(self.filename_base_exam, item)
@@ -264,9 +269,9 @@ class Class:
         adds new student
         """
         if self.contains_student(first, last):
-            print(f"Warning! Adding the same student a second time!")
-            # TODO find some reasonable way to ping that back to GUI (do you really want to do that? or so)
-        self.students.append(Student(first, last))
+            logging.warning(f"Class already contains student {first.capitalize()} {last.capitalize()}, skipping")
+        else:
+            self.students.append(Student(first, last))
         self.store_to_database()
 
     def remove_student(self, first: str, last: str):
@@ -424,90 +429,112 @@ class Class:
         # computing grades
         new_exam.compute_grades()
 
-        # storing that exam as csv
-        self.store_exam(new_exam)
+        # making sure to store that exam in excel file
+        self.store_exams()
 
-    def store_exam(self, exam: Exam, filetype="xlsx"):
+    def store_exams(self, filetype="xlsx"):
         """
-        Stores the exam to disk. Most important function, as this allows manual overwrite
-        :param exam:
+        Stores all exams to disk. Most important function, as this allows manual overwrite
+        See the layout_gradefiles for details on what goes where, ...
         :param filetype:
         :return:
         """
 
-        # TODO remove debug statement
-        print("==========HERE==========")
-
         # sanitize file type
-        if filetype not in self.supported_filetypes:
-            logging.warning("Don't know that filetype. Using xlsx instead")
+        # if filetype not in self.supported_filetypes:
+        if filetype != "xlsx":
+            logging.warning(f"Don't know that filetype {filetype}. Using xlsx instead")
             filetype = "xlsx"
 
-
-        output_name = self.filename_base_exam + exam.name
+        output_name = os.path.join(self.filename_base_exam, "pruefungen.xlsx")
         # check if an old exam with that name already exists - if yes, move it to trash
+        # logging.info(f"Storing {exam.name}_{exam.term} to {output_name}.{filetype}")
+        # print(f"Storing {exam.name}_{exam.term} to {output_name}.{filetype}")
 
-        logging.info(f"Storing {exam.name}_{exam.term} to {output_name}.{filetype}")
-        print(f"Storing {exam.name}_{exam.term} to {output_name}.{filetype}")
-
-        if os.path.exists(output_name):
-            logging.warning("Found old exam with same name. Moving the old one to the trash")
-            shutil.move(output_name, f"{self.folder_shadow}{time.time()/60}_{output_name}")
+        # if os.path.exists(output_name):
+        #     logging.warning("Found old file containing the exams. Moving it to the .trash folder")
+        #     shutil.move(output_name, f"{self.folder_shadow}{time.time()/60}_{output_name}")
 
         # store the exam to disk, given the chosen mode
         # TODO also store max points, points for 6 in exam
         if filetype == "xlsx":
-            output_name = output_name + ".xlsx"
             workbook = openpyxl.Workbook()
             worksheet = workbook.active
 
-            worksheet.cell(row=1, column=1, value="Nachname")
-            worksheet.cell(row=1, column=2, value="Vorname")
-            worksheet.cell(row=1, column=3, value="Punkte")
-            worksheet.cell(row=1, column=4, value="Note")
+            # Get the maximum row and column indices
+            max_row = worksheet.max_row
+            max_col = worksheet.max_column
 
-            # write the data
-            for row, student in enumerate(self.students, start=2):
+            # reserve some space on top of Excel file (for class name, weights of categories, ...)
+            # TODO do this dynamically -- use amount of cateogries, ...
+            # For loading, search for "Nachname" or so to get this index.
+
+            # set number of headers, accoring to layout in .ods file
+            amount_header_columns = 1 + 1 + len(self.categories) + 5
+
+            # TODO store header rows
+            # TODO hide them from user -- they should not screw around wiht those values
+            worksheet.cell(row=1, column=1, value="Klassenname")
+            worksheet.cell(row=1, column=2, value=self.name)
+
+            worksheet.cell(row=2, column=1, value="Categories")
+            worksheet.cell(row=2, column=2, value="Category name")
+            worksheet.cell(row=2, column=3, value="Category weight")
+            worksheet.cell(row=2, column=4, value="Grading type")
+            for i, cat in enumerate(self.categories):
+                worksheet.cell(row=2 + i, column=2, value=cat.name)
+                worksheet.cell(row=2 + i, column=3, value=cat.weight)
+                worksheet.cell(row=2 + i, column=4, value=cat.grading_type)
+                worksheet.row_dimensions[2+i].hidden = True
+
+            worksheet.cell(row=amount_header_columns-1, column=1, value="Nachname")
+            worksheet.cell(row=amount_header_columns-1, column=2, value="Vorname")
+            for row, student in enumerate(self.students, start=amount_header_columns):
                 worksheet.cell(row=row, column=1, value=student.lastname)
                 worksheet.cell(row=row, column=2, value=student.firstname)
-                try:
-                    points = exam.points[student]
-                except:
-                    points = ""
-                worksheet.cell(row=row, column=3, value=points)
-                try:
-                    grade = exam.grades[student]
-                except:
-                    grade = ""
-                worksheet.cell(row=row, column=4, value=grade)
 
-                logging.info(f"Saved Exam grades to Excel sheet on location{output_name}")
-                workbook.save(output_name)
+            column_iterator = 0
+            for cat_column, cat in enumerate(self.categories):
+                for exam_column, exam in enumerate(cat.exams):
+                    # store exam headers
+                    exam_column = 2*column_iterator + 3
+                    column_iterator = column_iterator + 1
+                    print(f"putting exam {exam} to column {exam_column}")
+                    # TODO hide those headers
+                    worksheet.cell(row=amount_header_columns-5, column=exam_column, value=exam.min_grade)
+                    worksheet.cell(row=amount_header_columns-5, column=exam_column+1, value=exam.max_grade)
+                    worksheet.cell(row=amount_header_columns-4, column=exam_column, value=exam.max_points)
+                    worksheet.cell(row=amount_header_columns-4, column=exam_column+1, value=exam.points_needed_for_6)
+                    worksheet.cell(row=amount_header_columns-3, column=exam_column, value=exam.computation_strategy)
+                    worksheet.cell(row=amount_header_columns-2, column=exam_column, value=exam.name)
+                    worksheet.cell(row=amount_header_columns-2, column=exam_column+1, value=exam.category)
+                    worksheet.cell(row=amount_header_columns-1, column=exam_column, value="Punkte")
+                    worksheet.cell(row=amount_header_columns-1, column=exam_column+1, value="Note")
 
-        else:
-            if filetype == "csv":
-                output_name = output_name + ".csv"
-                with open(output_name, "w", newline="") as file:
-                    writer = csv.writer(file)
-
-                    # write the headers
-                    writer.writerow(["Nachname", "Note exakt", "Punkte", "Note"])
-
-                    for student in self.students:
+                    # store grading data
+                    for row, student in enumerate(self.students, start=amount_header_columns):
                         try:
                             points = exam.points[student]
                         except:
                             points = ""
+                        worksheet.cell(row=row, column=exam_column, value=points)
                         try:
                             grade = exam.grades[student]
                         except:
                             grade = ""
+                        worksheet.cell(row=row, column=exam_column+1, value=grade)
 
-                        writer.writerow([student.lastname, student.firstname, points, grade])
+            # TODO hide rows here
+            for row in range(2, amount_header_columns-2):
+                worksheet.row_dimensions[row].hidden = True
+
+
+            logging.info(f"Saved Exam grades to Excel sheet on location{output_name}")
+            workbook.save(output_name)
 
     def update_grade(self, exam: Exam, students: list[Student], new_grades: dict[Student, float], new_points: dict[Student, float], computation_mode = "linear"):
         """
-        Let's a user update a student's grade, either by letting the program recompute the grade based on their points or manually
+        Lets a user update a student's grade, either by letting the program recompute the grade based on their points or manually
         overwriting everything by setting the grades. Gives priority to recalculating stuff by my program
         :param exam:
         :param student:
@@ -527,7 +554,7 @@ class Class:
                     raise logging.error(f"Could not set grade for student {student.firstname} {student.lastname} as they are not in either provided list")
 
         # store exam to disk
-        self.store_exam(exam)
+        self.store_exams(exam)
 
 
 
@@ -539,6 +566,7 @@ class Class:
         """
 
         # TODO thoroughly test this function!!!
+        # TODO remove csv as output possibility
 
         if output_type != "xlsx" or output_type != "csv":
             logging.error("Don't know that file type. Using xlsx instead")

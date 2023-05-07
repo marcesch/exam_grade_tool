@@ -48,6 +48,8 @@ class Exam:
         if min_grade > max_grade:
             logging.error("Received higher min_grade than max_grade")
 
+    def __str__(self):
+        return f"E-{self.name}-{self.term}"
 
     def compute_single_grade(self, points):
         """
@@ -73,6 +75,8 @@ class Exam:
         Using the points, compute the corresponding grades according to grade_computation strategy
         :return:
         """
+
+        # TODO continue here -- grades are not correct they are the same for all exams despite having different points!
 
         old_grades = self.grades
 
@@ -221,6 +225,9 @@ class Cateogry:
         if self.grading_type not in self.grading_types:
             logging.error("Unknown grading type. Using default instead")
             self.grading_type = "default"
+
+    def __str__(self):
+        return f"{self.name} {self.term}"
 
     def add_exam(self, exam_name: str, term: str, classname: str, max_points: int, points_needed_for_6: int = None, min_grade: int=1, max_grade=6, achieved_points={}):
         """

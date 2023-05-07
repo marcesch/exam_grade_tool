@@ -9,6 +9,9 @@ class Student:
         self.firstname = firstname
         self.lastname = lastname
 
+    def __str__(self):
+        return f"{self.firstname} {self.lastname}"
+
 
     def change_name(self, new_first: str, new_last: str):
         """

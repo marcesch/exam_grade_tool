@@ -1,0 +1,10 @@
+Categories: ['oral 2015HS', 'redaction 2015HS', 'voci 2015HS', 'grammaire 2015HS']
+
+Cat oral 2015HS: exams:
+['E-orale-HS_2015']
+Cat redaction 2015HS: exams:
+['E-redaction 1-HS_2015', 'E-redaction 2-HS_2015']
+Cat voci 2015HS: exams:
+['E-voci 1-HS_2015', 'E-voci 2-HS_2015', 'E-voci 3-HS_2015']
+Cat grammaire 2015HS: exams:
+['E-grammaire 1-HS_2015', 'E-grammaire 2-HS_2015']

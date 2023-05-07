@@ -18,6 +18,7 @@ categorization:
 - [1] permissions for files using `os.chmod(filename, 0o444), probably 0x664 (root can edit)
     - RW for all exam data
     - R on student list -- don't want users to mess with that
+- [1] clean up folder / file names, it's a mess currently
 - [1] test the shit out of the bugger
 - [1] do frontend
 - [1] deal with loading / storing at startup / different times / ...
@@ -37,6 +38,12 @@ categorization:
 - [2] start "documentation" of workflows and project layout -- e.g., after calling method XY, class gets stored on disk automatically. After addign student, has to be invoked manually. Etc.
 - [1] store the bugger on github -- maybe use protonmail for reasons.
 - [2] deal with folderpath reasonably
+- [2] remove support for csv files -- not needed anyway; users won't be able to deal with that shit.
+    - if I want to keep it, I'd rather write a short function that converts the excel files to a csv.
+- [4] support english
+- [4] keep index of deleted files / contents in trash
+- [1] Better string handling for student names -- store everyhting as .lower(), show as capitalize()
+    - accept lower/upper case input
 
 
 ### Disk thoughts
