@@ -12,6 +12,9 @@ class Student:
     def __str__(self):
         return f"{self.firstname} {self.lastname}"
 
+    def __repr__(self):
+        return f"{self.firstname} {self.lastname}"
+
 
     def change_name(self, new_first: str, new_last: str):
         """

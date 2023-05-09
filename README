@@ -44,7 +44,9 @@ categorization:
 - [4] keep index of deleted files / contents in trash
 - [1] Better string handling for student names -- store everyhting as .lower(), show as capitalize()
     - accept lower/upper case input
-
+- [3] add grading mode "curve fitting": instead of linear, say where the 4 is and where the 6 is
+    - can also do that with arbitrary many grades; use linear interapolation for grades in between
+    - use fancy interpolations because of reasons, alternatively
 
 ### Disk thoughts
 

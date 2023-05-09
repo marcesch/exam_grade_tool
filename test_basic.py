@@ -6,6 +6,7 @@ import pytest as pytest
 from classes import Class
 
 
+
 # TODO do it properly with pytest
 
 
@@ -94,6 +95,14 @@ def test_trash_functionality():
     raise NotImplementedError
 
 
+def print_exam_results(class_6a):
+    print("=================")
+    student = class_6a.get_student("Nicolas", "Zillig")
+    for cat in class_6a.categories:
+        for exam in cat.exams:
+            print(f"Student{student} got points {exam.points[student]}/{exam.max_points}, grade {exam.grades[student]} for exam {exam}")
+
+
 @pytest.mark.test_exam
 def test_cateogries_exams_simple():
     """
@@ -106,11 +115,11 @@ def test_cateogries_exams_simple():
     students_6a = [
         {"firstname": "Noe", "lastname": "Matumona"},
         {"firstname": "Nicolas", "lastname": "Zillig"},
-        {"firstname": "Dominik", "lastname": "Sarman"},
-        {"firstname": "Alina", "lastname": "Kohler"},
-        {"firstname": "Nina", "lastname": "Matumona"},
-        {"firstname": "Marlene", "lastname": "asdf"},
-        {"firstname": "Nina", "lastname": "Kohler"},
+        # {"firstname": "Dominik", "lastname": "Sarman"},
+        # {"firstname": "Alina", "lastname": "Kohler"},
+        # {"firstname": "Nina", "lastname": "Matumona"},
+        # {"firstname": "Marlene", "lastname": "asdf"},
+        # {"firstname": "Nina", "lastname": "Kohler"},
     ]
 
     class_6a = Class("6x", "HS", 2015)
@@ -130,7 +139,7 @@ def test_cateogries_exams_simple():
     points_max = [25, 25, 15, 15, 15, 10, 35, 35]
     points_for_6 = [22, 23, 15, 15, 15, 10, 30, 28]
     grades_noe = [25, 25, 15, 15, 15, 10, 35, 35]
-    grades_nici = [15, 15, 10, 10, 9, 10, 20, 20]
+    grades_nici = [0, 23, 0, 15, 0, 10, 0, 25]
     grades_dominik = [8, 22, 15, 7, 9, 10, 17, 17]
     grades_alina = [0, 0, 0, 0, 0, 0, 0, 0]
     grades_nina = [23, 18, 14, 15, 14, 10, 30, 29]
@@ -139,100 +148,129 @@ def test_cateogries_exams_simple():
 
     noe = class_6a.get_student("Noe", "Matumona")
     nici = class_6a.get_student("Nicolas", "Zillig")
-    dominik = class_6a.get_student("Dominik", "Sarman")
-    alina = class_6a.get_student("Alina", "Kohler")
-    nina = class_6a.get_student("Nina", "Matumona")
-    marlene = class_6a.get_student("Marlene", "asdf")
-    nina2 = class_6a.get_student("Nina", "Kohler")
+    # dominik = class_6a.get_student("Dominik", "Sarman")
+    # alina = class_6a.get_student("Alina", "Kohler")
+    # nina = class_6a.get_student("Nina", "Matumona")
+    # marlene = class_6a.get_student("Marlene", "asdf")
+    # nina2 = class_6a.get_student("Nina", "Kohler")
 
     redaction1 = {
                     noe: grades_noe[0],
                     nici: grades_nici[0],
-                    dominik: grades_dominik[0],
-                    alina: grades_alina[0],
-                    nina: grades_nina[0],
-                    marlene: grades_marlene[0],
-                    nina2: grades_nina2[0]
+                    # dominik: grades_dominik[0],
+                    # alina: grades_alina[0],
+                    # nina: grades_nina[0],
+                    # marlene: grades_marlene[0],
+                    # nina2: grades_nina2[0]
                   }
     redaction2 = {
                     noe: grades_noe[1],
                     nici: grades_nici[1],
-                    dominik: grades_dominik[1],
-                    alina: grades_alina[1],
-                    nina: grades_nina[1],
-                    marlene: grades_marlene[1],
-                    nina2: grades_nina2[1]
+                    # dominik: grades_dominik[1],
+                    # alina: grades_alina[1],
+                    # nina: grades_nina[1],
+                    # marlene: grades_marlene[1],
+                    # nina2: grades_nina2[1]
                   }
     voci1 = {
                     noe: grades_noe[2],
                     nici: grades_nici[2],
-                    dominik: grades_dominik[2],
-                    alina: grades_alina[2],
-                    nina: grades_nina[2],
-                    marlene: grades_marlene[2],
-                    nina2: grades_nina2[2]
+                    # dominik: grades_dominik[2],
+                    # alina: grades_alina[2],
+                    # nina: grades_nina[2],
+                    # marlene: grades_marlene[2],
+                    # nina2: grades_nina2[2]
                   }
     voci2 = {
                     noe: grades_noe[3],
                     nici: grades_nici[3],
-                    dominik: grades_dominik[3],
-                    alina: grades_alina[3],
-                    nina: grades_nina[3],
-                    marlene: grades_marlene[3],
-                    nina2: grades_nina2[3]
+                    # dominik: grades_dominik[3],
+                    # alina: grades_alina[3],
+                    # nina: grades_nina[3],
+                    # marlene: grades_marlene[3],
+                    # nina2: grades_nina2[3]
                   }
 
     voci3 = {
                     noe: grades_noe[4],
                     nici: grades_nici[4],
-                    dominik: grades_dominik[4],
-                    alina: grades_alina[4],
-                    nina: grades_nina[4],
-                    marlene: grades_marlene[4],
-                    nina2: grades_nina2[4]
+                    # dominik: grades_dominik[4],
+                    # alina: grades_alina[4],
+                    # nina: grades_nina[4],
+                    # marlene: grades_marlene[4],
+                    # nina2: grades_nina2[4]
                   }
 
     oral = {
                     noe: grades_noe[5],
                     nici: grades_nici[5],
-                    dominik: grades_dominik[5],
-                    alina: grades_alina[5],
-                    nina: grades_nina[5],
-                    marlene: grades_marlene[5],
-                    nina2: grades_nina2[5]
+                    # dominik: grades_dominik[5],
+                    # alina: grades_alina[5],
+                    # nina: grades_nina[5],
+                    # marlene: grades_marlene[5],
+                    # nina2: grades_nina2[5]
                   }
 
     grammaire1 = {
                     noe: grades_noe[6],
                     nici: grades_nici[6],
-                    dominik: grades_dominik[6],
-                    alina: grades_alina[6],
-                    nina: grades_nina[6],
-                    marlene: grades_marlene[6],
-                    nina2: grades_nina2[6]
+                    # dominik: grades_dominik[6],
+                    # alina: grades_alina[6],
+                    # nina: grades_nina[6],
+                    # marlene: grades_marlene[6],
+                    # nina2: grades_nina2[6]
                   }
 
     grammaire2 = {
                     noe: grades_noe[7],
                     nici: grades_nici[7],
-                    dominik: grades_dominik[7],
-                    alina: grades_alina[7],
-                    nina: grades_nina[7],
-                    marlene: grades_marlene[7],
-                    nina2: grades_nina2[7]
+                    # dominik: grades_dominik[7],
+                    # alina: grades_alina[7],
+                    # nina: grades_nina[7],
+                    # marlene: grades_marlene[7],
+                    # nina2: grades_nina2[7]
                   }
 
+    print_exam_results(class_6a)
+    print("=============")
     class_6a.add_exam("redaction 1", "redaction", points_max[0], points_needed_for_6=points_for_6[0], achieved_points=redaction1)
+    print_exam_results(class_6a)
     class_6a.add_exam("redaction 2", "redaction", points_max[1], points_needed_for_6=points_for_6[1], achieved_points=redaction2)
+    print_exam_results(class_6a)
     class_6a.add_exam("voci 1", "voci", points_max[2], achieved_points=voci1)
+    print_exam_results(class_6a)
     class_6a.add_exam("voci 2", "voci", points_max[3], achieved_points=voci2)
+    print_exam_results(class_6a)
+
+    # class_6a.store_exams()
+    # for student in class_6a.students:
+    #     if student.firstname == "Noe" or student.firstname == "Alina":
+    #         continue
+    #     for cat in class_6a.categories:
+    #         for exam in cat.exams:
+    #             print(f"Student{student} got poitns {exam.points[student]}/{exam.max_points} for exam {exam}")
+    #             print(f"Student{student} got grade {exam.grades[student]} for exam {exam}")
+    # class_6a.create_grade_report()
+
     class_6a.add_exam("voci 3", "voci", points_max[4], achieved_points=voci3)
     class_6a.add_exam("orale", "oral", points_max[5], achieved_points=oral)
     class_6a.add_exam("grammaire 1", "grammaire", points_max[6], points_for_6[6], achieved_points=grammaire1)
     class_6a.add_exam("grammaire 2", "grammaire", points_max[7], points_for_6[7], achieved_points=grammaire2)
 
-    class_6a.store_exams()
-    class_6a.create_grade_report()
+    student = class_6a.get_student("Nicolas", "Zillig")
+    for cat in class_6a.categories:
+        for exam in cat.exams:
+            print(f"Student{student} got poitns {exam.points[student]}/{exam.max_points} for exam {exam}")
+            print(f"Student{student} got grade {exam.grades[student]} for exam {exam}")
+
+    # class_6a.store_exams()
+    # for student in class_6a.students:
+    #     if student.firstname == "Noe" or student.firstname == "Alina":
+    #         continue
+    #     for cat in class_6a.categories:
+    #         for exam in cat.exams:
+    #             print(f"Student{student} got poitns {exam.points[student]}/{exam.max_points} for exam {exam}")
+    #             print(f"Student{student} got grade {exam.grades[student]} for exam {exam}")
 
     report_location = os.path.join(class_6a.filename_class_base, f"{class_6a.name}_report{(class_6a.report_id-1):02}.xlsx")
     shutil.copy(report_location, "./results_tests/")

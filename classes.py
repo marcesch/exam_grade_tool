@@ -1,13 +1,14 @@
 import csv
-
-from student import Student
-from exam import Exam, Cateogry
 import typing
 import os
 import logging
 import shutil
 import openpyxl
 import time
+
+from category import Category
+from exam import Exam
+from student import Student
 
 FOLDERPATH = "./tmp/klassen/"
 
@@ -28,8 +29,7 @@ TODO cna python also handle xlsx files? might be a little bit more convenient th
 class Class:
     def __init__(self, name: str, term: str, year: int):
         self.students: list[Student] = []
-        self.exams: list[Exam] = []
-        self.categories: list[Cateogry] = []
+        self.categories: list[Category] = []
         self.name: str = name
         if (term.lower() == "hs"):
             self.term: str = term.upper()
@@ -314,7 +314,7 @@ class Class:
             if cat.name == name:
                 return cat
 
-        raise RuntimeError(f"Could not find that cateogry in the list {self.categories}")
+        raise RuntimeError(f"Could not find that Category in the list {self.categories}")
 
     def remove_category(self, cat: str):
         if self.contains_category(cat):
@@ -327,12 +327,12 @@ class Class:
         logging.info("Adding category")
         # TODO check if categroy already exists
         grading_type = cat["grading_type"] if "grading_type" in cat else "default"
-        self.categories.append(Cateogry(name=cat["name"], term=f"{self.year}{self.term.upper()}", classname=self.name,
+        self.categories.append(Category(name=cat["name"], term=f"{self.year}{self.term.upper()}", classname=self.name,
                                         weight=cat["weight"], grading_type=grading_type))
 
-    def initialize_categories_from_old(self, exam_categories: list[Cateogry]):
+    def initialize_categories_from_old(self, exam_categories: list[Category]):
         for cat in exam_categories:
-            self.categories.append(Cateogry(cat.name, f"{self.year}{self.term.upper()}", self.name, cat.weight, cat.grading_type))
+            self.categories.append(Category(cat.name, f"{self.year}{self.term.upper()}", self.name, cat.weight, cat.grading_type))
 
     def initialize_categories(self, exam_categories: list[dict[str: typing.Any]]):
         """
@@ -352,7 +352,7 @@ class Class:
         logging.info(f"Initializing list of categories")
         for cat in exam_categories:
             grading_type = cat["grading_type"] if "grading_type" in cat else "default"
-            self.categories.append(Cateogry(name=cat["name"], term=f"{self.year}{self.term.upper()}", classname=self.name, weight=cat["weight"], grading_type=grading_type))
+            self.categories.append(Category(name=cat["name"], term=f"{self.year}{self.term.upper()}", classname=self.name, weight=cat["weight"], grading_type=grading_type))
 
     def upadte_categories(self, exam_categories: list[dict[str: str]]):
         """
@@ -376,7 +376,7 @@ class Class:
         for old_cat in self.categories:
             if old_cat.name not in new_names:
                 if len(old_cat.exams) != 0:
-                    raise RuntimeError(f"Cannot delete category {old_cat} as there is an exam in that cateogry.")
+                    raise RuntimeError(f"Cannot delete category {old_cat} as there is an exam in that Category.")
 
         logging.info(f"Updating list of categories")
         for cat in exam_categories:
@@ -408,9 +408,7 @@ class Class:
         """
 
         # TODO sanitize user inputs
-
         # TODO make sure that exam names are unique
-
 
         # check if category is present:
         category = None
@@ -420,16 +418,38 @@ class Class:
                 break
         if category is None:
             logging.warning(f"Did not find category. Creating new one. NEED TO SET WEIGHT MANUALLY!")
-            category = Cateogry(exam_category, self.term, self.name, weight=0)
+            category = Category(exam_category, self.term, self.name, weight=0)
             self.categories.append(category)
 
         new_exam = category.add_exam(exam_name, term=f"{self.term.upper()}_{self.year}", classname=self.name, max_points=max_points, points_needed_for_6=points_needed_for_6,
                                      min_grade=min_grade, max_grade=max_grade, achieved_points=achieved_points)
 
-        # computing grades
-        new_exam.compute_grades()
+        assert category.exams[-1] == new_exam
 
-        # making sure to store that exam in excel file
+        # TODO remove debug print
+        # TODO why is the new exam not empty? Does it take some of the same from the old exam??
+        print(f"Added exam {new_exam} in category {category}. Calling compute grades\n")
+        print(f"Exams: {[cat.exams for cat in self.categories]} (added {new_exam})")
+        print(f"Grades {new_exam}: {new_exam.grades}\nPoints: {new_exam.points}\n")
+
+        # computing grades
+        # new_exam.compute_grades()
+        for cat in self.categories:
+            for exam in cat.exams:
+                # print(f"Calling compute_grades on {exam}")
+                exam.compute_grades()
+                # print(f"AFTER CALLING FUNCTION:\nGrades {exam} | {new_exam}: {new_exam.grades}\nPoints: {new_exam.points}")
+
+        for cat in self.categories:
+            for exam in cat.exams:
+                # print(f"Calling compute_grades on {exam}")
+                # exam.compute_grades()
+                print(f"AFTER CALLING FUNCTION:\nGrades {exam} | {new_exam}: {new_exam.grades}\nPoints: {new_exam.points}")
+
+
+        # print(f"AFTER CALLING FUNCTION:\nGrades {new_exam}: {new_exam.grades}\nPoints: {new_exam.points}\n\n")
+
+        # making sure to store that exam in Excel file
         self.store_exams()
 
     def store_exams(self, filetype="xlsx"):
@@ -499,7 +519,6 @@ class Class:
                     # store exam headers
                     exam_column = 2*column_iterator + 3
                     column_iterator = column_iterator + 1
-                    print(f"putting exam {exam} to column {exam_column}")
                     # TODO hide those headers
                     worksheet.cell(row=amount_header_columns-5, column=exam_column, value=exam.min_grade)
                     worksheet.cell(row=amount_header_columns-5, column=exam_column+1, value=exam.max_grade)
@@ -524,10 +543,8 @@ class Class:
                             grade = ""
                         worksheet.cell(row=row, column=exam_column+1, value=grade)
 
-            # TODO hide rows here
             for row in range(2, amount_header_columns-2):
                 worksheet.row_dimensions[row].hidden = True
-
 
             logging.info(f"Saved Exam grades to Excel sheet on location{output_name}")
             workbook.save(output_name)
@@ -584,7 +601,7 @@ class Class:
 
         total_grades: dict[Student, float] = {}
         for student in self.students:
-            exams_per_cat: dict[Cateogry, list[Exam]] = {}
+            exams_per_cat: dict[Category, list[Exam]] = {}
             empty_cat = []
             # collect all exams
             for cat in self.categories:
@@ -607,7 +624,7 @@ class Class:
 
             # for all those categories where there is no exam seen, I need to add a scaling factor -- see above
 
-            weighted_per_cat: dict[Cateogry, float] = {}
+            weighted_per_cat: dict[Category, float] = {}
             for cat in exams_per_cat:
                 # compute "average" grade for each category, according to grading type fixed in category
                 weighted_per_cat[cat] = cat.aggregate_grades(student, exams_per_cat[cat])
