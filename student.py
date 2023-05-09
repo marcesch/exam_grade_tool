@@ -15,6 +15,15 @@ class Student:
     def __repr__(self):
         return f"{self.firstname} {self.lastname}"
 
+    def __eq__(self, other):
+        if other == None:
+            return False
+        if type(other) != Student:
+            raise RuntimeError(f"Cannot compare students to other object of type {type(other)}")
+        return other.firstname == self.firstname and other.lastname == self.lastname
+
+    def __hash__(self):
+        return hash(''.join([self.firstname, self.lastname]))
 
     def change_name(self, new_first: str, new_last: str):
         """

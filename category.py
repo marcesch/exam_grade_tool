@@ -51,7 +51,17 @@ class Category:
     def __repr__(self):
         return f"C-{self.name}"
 
-    def add_exam(self, exam_name: str, term: str, classname: str, max_points: int, points_needed_for_6: int = None, min_grade: int=1, max_grade=6, achieved_points={}):
+    def add_exam(self,
+                 exam_name: str,
+                 term: str,
+                 classname: str,
+                 max_points: int,
+                 points_needed_for_6: int = None,
+                 min_grade: int=1,
+                 max_grade=6,
+                 achieved_points= None,
+                 achieved_grades=None,
+                 computation_mode = None):
         """
 
         :param exam:
@@ -60,7 +70,6 @@ class Category:
 
         if points_needed_for_6 is None:
             points_needed_for_6 = max_points
-        assert type(achieved_points) == dict
         exam = Exam(name=exam_name,
                     term=term,
                     classname=classname,
@@ -69,7 +78,9 @@ class Category:
                     points=achieved_points,
                     points_needed_for_6=points_needed_for_6,
                     min_grade=min_grade,
-                    max_grade=max_grade)
+                    max_grade=max_grade,
+                    grades=achieved_grades,
+                    grade_computation=computation_mode)
         self.exams.append(exam)
         return exam
 

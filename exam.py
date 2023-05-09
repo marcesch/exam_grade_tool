@@ -17,8 +17,8 @@ TODO exam modes:
 """
 
 class Exam:
-    def __init__(self, name: str, term: str, classname: str, category: str, max_points: int, points: dict[Student, int] = {}, points_needed_for_6: int = None,
-                 min_grade: int = 1, max_grade=6, grades: dict[Student, float] = {}, grade_computation = "linear"):
+    def __init__(self, name: str, term: str, classname: str, category: str, max_points: int, points: dict[Student, int] = None, points_needed_for_6: int = None,
+                 min_grade: int = 1, max_grade=6, grades: dict[Student, float] = None, grade_computation = "linear"):
         self.name = name
         # term = hs23 etc.
         self.term = term
@@ -30,11 +30,14 @@ class Exam:
             logging.info(f"Exa: changing default for min_grade")
         self.min_grade = min_grade
         self.max_grade = max_grade
-        self.points = points
+        self.points = {}
+        if self.points != None:
+            self.points = points
         self.computation_strategy = grade_computation
-        if grades != {}:
+        self.grades: dict[Student, float] = {}
+        if grades != None:
             logging.warning("Manually overwriting grades with user input. Might be inconsistent with points received by students")
-        self.grades: dict[Student, float] = grades
+            self.grades: dict[Student, float] = grades
 
         if max_points < points_needed_for_6:
             raise RuntimeWarning("Maximum amount of points should be smaller than points needed for 6")
@@ -76,19 +79,6 @@ class Exam:
         Using the points, compute the corresponding grades according to grade_computation strategy
         :return:
         """
-
-        # TODO continue here -- grades are not correct they are the same for all exams despite having different points!
-
-        DEBUG = True
-
-        if DEBUG:
-            for student in self.points:
-                self.grades[student] = self.compute_single_grade(self.points[student])
-                # print(f"Computing grades for student {student}; got {self.points[student]}/{self.points_needed_for_6} ===> {self.grades[student]} for exam {self}")
-
-            # for student in self.points:
-            #     self.grades[student] = self.compute_single_grade(self.points[student])
-            return
 
         old_grades = self.grades
 

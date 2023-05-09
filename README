@@ -47,6 +47,9 @@ categorization:
 - [3] add grading mode "curve fitting": instead of linear, say where the 4 is and where the 6 is
     - can also do that with arbitrary many grades; use linear interapolation for grades in between
     - use fancy interpolations because of reasons, alternatively
+- [1] Include checks that exam and category names differ
+- [1] Implement __eq__ for exam / category -> use with above point to infer whether exam should be renamed (different grades) or whehter user meant same exam (same name, poits, gradse)
+
 
 ### Disk thoughts
 

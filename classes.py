@@ -41,7 +41,7 @@ class Class:
         self.year: int = year
         self.filename_class_base = ""
         self.filename_class = ""
-        self.filename_base_exam = ""
+        self.filename_base_examfilename_base_exam = ""
         self.update_filenames()
         self.folder_shadow = FOLDERPATH + ".trash/"
         self.report_id = 0
@@ -55,13 +55,9 @@ class Class:
     def __str__(self):
         return f"{self.name} {self.term.upper()}{self.year}"
 
-    def load_data(self):
-        """
-        load data for a given class -- list of categories and all exams
-        :return:
-        """
-        # TODO first need to settle on layout for exam overview -- I prefer keeping everything in one Excel.
-        raise NotImplementedError
+    def __repr__(self):
+        return f"C-{self.name} {self.term.upper()}{self.year}"
+
 
     def update_name(self, new_name: str):
         self.name = new_name
@@ -116,6 +112,8 @@ class Class:
         old_categories = self.categories
         self.categories = []
         self.initialize_categories_from_old(old_categories)
+
+
 
     def store_to_database(self):
         """
@@ -287,22 +285,6 @@ class Class:
         self.students.remove(student_in_db)
         self.store_to_database()
 
-
-
-
-    """
-    ========================== EXAM CATEGORY PART    
-    """
-
-    """
-    What to do as a weight invariant?
-    a) check sum(weights) at computation of final results?
-    b) check sum(weights) at initialization of categories
-    
-    => I think a) is more user-friendly, gonna do that.
-    """
-
-
     def contains_category(self, name: str):
         for cat in self.categories:
             if cat.name == name:
@@ -389,8 +371,15 @@ class Class:
                 self.add_category(cat)
 
 
-    def add_exam(self, exam_name: str, exam_category: str, max_points: int, points_needed_for_6: int = None, min_grade=1,
-                 max_grade=6, achieved_points = {}):
+    def add_exam(self, exam_name: str,
+                 exam_category: str,
+                 max_points: int,
+                 points_needed_for_6: int = None,
+                 min_grade=1,
+                 max_grade=6,
+                 achieved_points = None,
+                 achieved_grades = None,
+                 computation_mode=None):
         """
 
         :param exam_name: e.g. Redaction 1
@@ -421,33 +410,26 @@ class Class:
             category = Category(exam_category, self.term, self.name, weight=0)
             self.categories.append(category)
 
-        new_exam = category.add_exam(exam_name, term=f"{self.term.upper()}_{self.year}", classname=self.name, max_points=max_points, points_needed_for_6=points_needed_for_6,
-                                     min_grade=min_grade, max_grade=max_grade, achieved_points=achieved_points)
-
-        assert category.exams[-1] == new_exam
-
-        # TODO remove debug print
-        # TODO why is the new exam not empty? Does it take some of the same from the old exam??
-        print(f"Added exam {new_exam} in category {category}. Calling compute grades\n")
-        print(f"Exams: {[cat.exams for cat in self.categories]} (added {new_exam})")
-        print(f"Grades {new_exam}: {new_exam.grades}\nPoints: {new_exam.points}\n")
+        new_exam = category.add_exam(exam_name,
+                                     term=f"{self.term.upper()}_{self.year}",
+                                     classname=self.name,
+                                     max_points=max_points,
+                                     points_needed_for_6=points_needed_for_6,
+                                     min_grade=min_grade,
+                                     max_grade=max_grade,
+                                     achieved_points=achieved_points,
+                                     achieved_grades=achieved_grades,
+                                     computation_mode=computation_mode)
 
         # computing grades
-        # new_exam.compute_grades()
-        for cat in self.categories:
-            for exam in cat.exams:
-                # print(f"Calling compute_grades on {exam}")
-                exam.compute_grades()
-                # print(f"AFTER CALLING FUNCTION:\nGrades {exam} | {new_exam}: {new_exam.grades}\nPoints: {new_exam.points}")
-
-        for cat in self.categories:
-            for exam in cat.exams:
-                # print(f"Calling compute_grades on {exam}")
-                # exam.compute_grades()
-                print(f"AFTER CALLING FUNCTION:\nGrades {exam} | {new_exam}: {new_exam.grades}\nPoints: {new_exam.points}")
-
-
-        # print(f"AFTER CALLING FUNCTION:\nGrades {new_exam}: {new_exam.grades}\nPoints: {new_exam.points}\n\n")
+        new_exam.compute_grades()
+        # for cat in self.categories:
+        #     for exam in cat.exams:
+        #         # print(f"Calling compute_grades on {exam}")
+        #         if exam.grades != None:
+        #             exam.compute_grades()
+        #         else:
+        #             logging.warning(f"Cannot compute grades for {exam}; exam.grades is None")
 
         # making sure to store that exam in Excel file
         self.store_exams()
@@ -459,6 +441,11 @@ class Class:
         :param filetype:
         :return:
         """
+
+        # TODO sort students according to last name
+        # sort students according to lastname
+        # TODO can also support firstname, theoretically
+        self.students = sorted(self.students, key=lambda student: student.lastname)
 
         # sanitize file type
         # if filetype not in self.supported_filetypes:
@@ -481,19 +468,12 @@ class Class:
             workbook = openpyxl.Workbook()
             worksheet = workbook.active
 
-            # Get the maximum row and column indices
-            max_row = worksheet.max_row
-            max_col = worksheet.max_column
-
             # reserve some space on top of Excel file (for class name, weights of categories, ...)
-            # TODO do this dynamically -- use amount of cateogries, ...
             # For loading, search for "Nachname" or so to get this index.
 
             # set number of headers, accoring to layout in .ods file
             amount_header_columns = 1 + 1 + len(self.categories) + 5
 
-            # TODO store header rows
-            # TODO hide them from user -- they should not screw around wiht those values
             worksheet.cell(row=1, column=1, value="Klassenname")
             worksheet.cell(row=1, column=2, value=self.name)
 
@@ -519,7 +499,6 @@ class Class:
                     # store exam headers
                     exam_column = 2*column_iterator + 3
                     column_iterator = column_iterator + 1
-                    # TODO hide those headers
                     worksheet.cell(row=amount_header_columns-5, column=exam_column, value=exam.min_grade)
                     worksheet.cell(row=amount_header_columns-5, column=exam_column+1, value=exam.max_grade)
                     worksheet.cell(row=amount_header_columns-4, column=exam_column, value=exam.max_points)
@@ -583,10 +562,12 @@ class Class:
         """
 
         # TODO thoroughly test this function!!!
-        # TODO remove csv as output possibility
+        # basic test has worked, need to test ugly cases (students did not take exam, ...)
 
-        if output_type != "xlsx" or output_type != "csv":
-            logging.error("Don't know that file type. Using xlsx instead")
+
+        if output_type != "xlsx":
+            logging.info(f"Don't know filetype {output_type}, using .xlsx instead")
+            output_type = "xlsx"
 
         if not self.categories:
             raise RuntimeError("Don't have any exams stored, can not generate grade report")
