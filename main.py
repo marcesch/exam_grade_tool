@@ -57,8 +57,10 @@ class Overview:
 
         # TODO include checks on validity / existence of folder
 
+        path = os.path.join(dirpath, "pruefungen.xlsx")
+
         # Open workbook
-        wb = openpyxl.load_workbook(dirpath)
+        wb = openpyxl.load_workbook(path)
         sheet = wb.active
 
         # Find row containing "Nachname"
@@ -97,7 +99,7 @@ class Overview:
             cell_exam_cat = sheet.cell(row=row_index - 1, column=col_index + 1)
 
             # check if there still is data for exam in this column
-            if cell_exam_name.value is None:
+            if cell_exam_name.value is None or cell_exam_name.value == "":
                 break
 
             # create new exam and add it to correct category
@@ -112,14 +114,30 @@ class Overview:
             # read in  student data:
             grades_exam = {}
             points_exam = {}
-            for row in sheet.iter_rows(min_row=row_index + 1):
-                firstname = row[0].value
+            number_iteration = 0
+            for row in sheet.iter_rows(min_row=row_index +1):
+                firstname = row[1].value
                 lastname = row[0].value
+                if firstname == None and lastname == None:
+                    break
                 student = class_obj.get_student(firstname, lastname)
                 if row[col_index] != None:
-                    points_exam[student] = int(row[col_index])
-                if row[col_index + 1] != None:
-                    grades_exam[student] = float(row[col_index + 1])
+                    points_exam[student] = int((row[col_index-1]).value)
+                try:
+                    if row[col_index ] != None:
+                        grades_exam[student] = float((row[col_index ]).value)
+                except Exception as e:
+                    print(f"Error for col {col_index+1}\n{e}\n{row[col_index]}")
+                # add break condition: stop after 100 iterations
+                if number_iteration >= 100:
+                    break
+                number_iteration += 1
+
+
+
+            # TODO remove print
+            print(f'Staring to add new exam with grades / points: \n  Grades: {grades_exam}\n Points: {points_exam}')
+            # logging.info(f"")
 
             # create exam object
             class_obj.add_exam(exam_name,

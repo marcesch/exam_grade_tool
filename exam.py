@@ -18,7 +18,7 @@ TODO exam modes:
 
 class Exam:
     def __init__(self, name: str, term: str, classname: str, category: str, max_points: int, points: dict[Student, int] = None, points_needed_for_6: int = None,
-                 min_grade: int = 1, max_grade=6, grades: dict[Student, float] = None, grade_computation = "linear"):
+                 min_grade: int = 1, max_grade=6, grades: dict[Student, float] = None, grade_computation="linear"):
         self.name = name
         # term = hs23 etc.
         self.term = term
@@ -64,13 +64,13 @@ class Exam:
             logging.warning("Got too many points, capping at maximum")
             points = self.max_points
 
-        if self.computation_strategy == "linear":
+        if self.computation_strategy == "linear" or self.computation_strategy == "default":
             grade = self.min_grade + (self.max_grade - self.min_grade) * points / self.points_needed_for_6
             grade = round(grade, 4)
             if grade >= 6:
                 grade = 6
         else:
-            raise NotImplementedError("Did not implement other ways to compute a grade yet")
+            raise NotImplementedError(f"Did not implement other ways to compute a grade yet\n Try using linear instead of {self.computation_strategy}")
 
         return grade
 
@@ -180,7 +180,6 @@ class Exam:
 
         fig.savefig('histogram.png')
 
-
         # Generate a PDF report
         c = canvas.Canvas(filename, pagesize=letter)
         c.drawString(100, 700, f"Summary report for {self.name}")
@@ -196,6 +195,3 @@ class Exam:
         c.showPage()
         c.save()
 
-        # TODO change location where both files are stored
-        # Save the histogram plot as a separate PNG file
-        fig.savefig('histogram.png')

@@ -187,6 +187,8 @@ class Class:
         """
         if first == None and last == None:
             raise RuntimeError("Must give at least one name")
+        first = first.lower()
+        last = last.lower()
         res = False
         res_student = None
         for students_contained in self.students:
@@ -217,6 +219,8 @@ class Class:
                 # TODO find some reasonable way to ping that back to GUI (do you really want to do that? or so)
             else:
                 self.students.append(Student(student["firstname"], student["lastname"]))
+
+        # TODO not clear if I want to store at this point, too...might slow things down too much
 
         # store the class as a csv
         # => that function checks whether old file already exists
@@ -265,16 +269,18 @@ class Class:
         """
         :return:
         adds new student
+        IT'S THE CALLERS JOB TO STORE THE DATABASE, STORING AT EVERY STEP IS WAY TOO SLOW!
+
         """
         if self.contains_student(first, last):
             logging.warning(f"Class already contains student {first.capitalize()} {last.capitalize()}, skipping")
         else:
             self.students.append(Student(first, last))
-        self.store_to_database()
 
     def remove_student(self, first: str, last: str):
         """
         what to do with the grades???
+        IT'S THE CALLERS JOB TO STORE THE DATABASE, STORING AT EVERY STEP IS WAY TOO SLOW!
         :param student:
         :return:
         """
@@ -283,7 +289,6 @@ class Class:
             raise RuntimeWarning(f"Could not find student {first} {last} in my database. Did you mistype?")
 
         self.students.remove(student_in_db)
-        self.store_to_database()
 
     def contains_category(self, name: str):
         for cat in self.categories:
@@ -379,7 +384,7 @@ class Class:
                  max_grade=6,
                  achieved_points = None,
                  achieved_grades = None,
-                 computation_mode=None):
+                 computation_mode="linear"):
         """
 
         :param exam_name: e.g. Redaction 1

@@ -257,6 +257,9 @@ def test_cateogries_exams_simple(gen_class_cat_examdata_simple):
 
     class_6a.create_grade_report()
     class_6a.store_exams()
+    # for cat in class_6a.categories:
+    #     for exam in cat.exams:
+    #         exam.generate_summary_report(f"tmp/{cat}-{exam}_report.pdf")
 
     report_location = os.path.join(class_6a.filename_class_base, f"{class_6a.name}_report{(class_6a.report_id-1):02}.xlsx")
     shutil.copy(report_location, "./results_tests/")
@@ -380,10 +383,28 @@ def test_import_exam_data(gen_class_cat_examdata_simple):
     :return:
     """
 
-    # make sure to delete the old exams
-    os.remove(FOLDERPATH)
+    directory_path = FOLDERPATH
+    for filename in os.listdir(directory_path):
+        file_path = os.path.join(directory_path, filename)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+
     class_6a = gen_class_cat_examdata_simple
     class_6a.store_exams()
+
+    class_copy = Class(class_6a.name, class_6a.term, class_6a.year)
+    class_6a.update_name("OLD_6a")
+    ov = Overview()
+    class_copy.students = class_6a.students.copy()
+    ov.load_categories_and_exams(class_copy)
+
+    for student in class_copy.students:
+        for i, cat in enumerate(class_copy.categories):
+            for j, exam in enumerate(cat.exams):
+                assert exam.points[student] == ((class_6a.categories[i]).exams[j]).points[student]
+                assert exam.grades[student] == ((class_6a.categories[i]).exams[j]).grades[student]
+
+
 
 @pytest.mark.file_management
 def test_import_data_specialCases():
@@ -467,5 +488,3 @@ def test_multiple_classes_weird_behavior():
     :return:
     """
     raise NotImplementedError
-
-

@@ -21,22 +21,14 @@ categorization:
 - [1] clean up folder / file names, it's a mess currently
 - [1] test the shit out of the bugger
 - [1] do frontend
-- [1] deal with loading / storing at startup / different times / ...
 - [4] do the thing securely, like encrypting exam data, ...
-- [1] use more functions for storage -- don't do it inline.
-    - unclear what I meant here...
-- [1] remove all stores inside backend code -- let the caller take care of that
 - [3] proper logging everywhere
-- [2] printing functions for student / category / ... classes, makes debugging easier
 - [1] make sure implementation can deal with student not writing exams
-- [1] add category mode streichnote
 - [2] data persistence: how and when to store what
 - [3] packaging -- create a single executable file from entire project
     - need to restructure project in a reasonable way
-- [2] store all exams in same excel file instead of mulitple files
 - [4] Add functionality for restoring stuff from the .trash folder within program
 - [2] start "documentation" of workflows and project layout -- e.g., after calling method XY, class gets stored on disk automatically. After addign student, has to be invoked manually. Etc.
-- [1] store the bugger on github -- maybe use protonmail for reasons.
 - [2] deal with folderpath reasonably
 - [2] remove support for csv files -- not needed anyway; users won't be able to deal with that shit.
     - if I want to keep it, I'd rather write a short function that converts the excel files to a csv.
@@ -49,12 +41,13 @@ categorization:
     - use fancy interpolations because of reasons, alternatively
 - [1] Include checks that exam and category names differ
 - [1] Implement __eq__ for exam / category -> use with above point to infer whether exam should be renamed (different grades) or whehter user meant same exam (same name, poits, gradse)
+- [1] pick files using file dialog: https://stackoverflow.com/questions/9319317/quick-and-easy-file-dialog-in-python
+- [3] for the lolz: add exam-calculation mode "Curve fitting" which fits to perfect gauss curve
+- [3] add more generaical mode of "streichnote" -- allow cancelling 1, 2, 3, ... grades
+- [1] mb don't add grade report (for average grades etc) as single file -- instead, simply append it.
+    - or add it as a separate arbeitsmappe -- that does not screw up my loading function
 
-
-### Disk thoughts
-
-1. Keeping multiple classes: can either store a dict / list using jsonpickle or so of everything needed. Alternatively, add class
-based on filename. I prefer the first solution (not as clean, probably, but as long as the user is not stupid enough to delete
-the files, I should be fine)
-=> settle on second, cleaner and less risk of users deleting important stuff. Also easier to fix, if they do.
-
+### Stuff to ask selina
+- layout for folders (ish imporant)
+- layout for exam => grade reports within same file?
+    - why not simply on second map? (arbeitsmappe?)

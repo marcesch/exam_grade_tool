@@ -61,7 +61,7 @@ class Category:
                  max_grade=6,
                  achieved_points= None,
                  achieved_grades=None,
-                 computation_mode = None):
+                 computation_mode = "linear"):
         """
 
         :param exam:
@@ -110,6 +110,18 @@ class Category:
             for exam in exams_to_be_counted:
                 sum = sum + exam.grades[student]
             return sum / len(exams_to_be_counted)
+        elif self.grading_type == "streichnote":
+            # cancels the worst result
+            if len(exams_to_be_counted) == 1:
+                return exams_to_be_counted[0]
+            min = -1
+            sum = 0
+            for exam in exams_to_be_counted:
+                sum = sum + exam.grades[student]
+                if min == -1 or min > exam.grades[student]:
+                    min = exam.grades[student]
+            return (sum-min) / (len(exams_to_be_counted)-1)
+
         else:
             raise NotImplementedError
 
