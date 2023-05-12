@@ -262,8 +262,8 @@ def test_cateogries_exams_simple(gen_class_cat_examdata_simple):
     #         exam.generate_summary_report(f"tmp/{cat}-{exam}_report.pdf")
 
     report_location = os.path.join(class_6a.filename_class_base, f"{class_6a.name}_report{(class_6a.report_id-1):02}.xlsx")
-    shutil.copy(report_location, "./results_tests/")
-    with open("./results_tests/exams_testrun_exams_simple", "w") as f:
+    shutil.copy(report_location, "../results_tests/")
+    with open("../results_tests/exams_testrun_exams_simple", "w") as f:
         f.write(f"Categories: {[cat.__str__() for cat in class_6a.categories]}\n\n")
         for cat in class_6a.categories:
             f.write(f"Cat {cat}: exams:\n{[ex.__str__() for ex in cat.exams]}\n")

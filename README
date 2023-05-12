@@ -46,8 +46,22 @@ categorization:
 - [3] add more generaical mode of "streichnote" -- allow cancelling 1, 2, 3, ... grades
 - [1] mb don't add grade report (for average grades etc) as single file -- instead, simply append it.
     - or add it as a separate arbeitsmappe -- that does not screw up my loading function
+- [2] how to deal with deleted students -- they will always re-appear when reloading program (maybe inlucde a hidden column with a delted-flag or put that in the csv)
+- [2] add cateogry mode "bonus" => e.g. max 0.25 noten bonus
+- [2] add pdf-report for semesternoten / grade report grades.
+- [1] add check that the user does not include too many categories (screws up loading / storing) -- cap at 15 or so
+
 
 ### Stuff to ask selina
 - layout for folders (ish imporant)
 - layout for exam => grade reports within same file?
     - why not simply on second map? (arbeitsmappe?)
+- spannende modi zum berechnen von noten / kategorien
+- GUI stuff: more pleasant if overview window (showing classes, ..) stays open in background or not?
+
+
+### GUI stuff
+use
+
+- https://github.com/RobertJN64/TKinterModernThemes/blob/master/TKinterModernThemes/examples/examplelauncher.py
+- use Treeview with one level of hierarchy for List / Columns
