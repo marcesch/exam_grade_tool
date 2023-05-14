@@ -43,6 +43,50 @@ class Overview:
     def __init__(self):
         self.classes = []
 
+    def get_class(self, name, year, term):
+        for class_obj in self.classes:
+            if class_obj.name == name and class_obj.year == int(year) and class_obj.term == term:
+                return class_obj
+        raise RuntimeError(f"Did not find any class matching {name} {term} {year}")
+
+    def fetch_classes(self, term, year):
+        """
+        :param term:
+        :param year:
+        :return: a list of classes matching the term / year
+        """
+        res = []
+        for class_obj in self.classes:
+            if (class_obj.term == term) and (class_obj.year == int(year)):
+                res.append(class_obj)
+
+        return res
+
+    def return_newest_classes(self, num_semester):
+        """
+        Returns a list of the last num_semester many seen tuples <term>-<year>. E.g. returns [HS2020, FS2021] if num_semester is 2
+        :param num_semester: Lenght of list to be returned
+        :return: list of term-year of newest classes in self.classes
+        """
+
+        def term_key(cls):
+            return (0 if cls == 'FS' else 1, cls)
+
+        term_years = []
+        for class_obj in self.classes:
+            if (class_obj.term, class_obj.year) in term_years:
+                continue
+            else:
+                term_years.append((class_obj.term, class_obj.year))
+
+        term_years.sort(key=lambda cls: (cls[1], term_key(cls[0])))
+        if len(term_years) <= num_semester:
+            logging.info(f"Did not find {num_semester} exams, only returning {len(term_years)} many")
+            return term_years
+        else:
+            return term_years[-num_semester:]
+
+
     def load_categories_and_exams(self, class_obj: Class, path_folder_exams: str = None):
         """
         :return:

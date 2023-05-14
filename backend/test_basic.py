@@ -5,7 +5,7 @@ import pytest as pytest
 
 from classes import Class
 from classes import FOLDERPATH
-from main import Overview
+from overview import Overview
 
 
 

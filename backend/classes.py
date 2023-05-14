@@ -58,6 +58,32 @@ class Class:
     def __repr__(self):
         return f"C-{self.name} {self.term.upper()}{self.year}"
 
+    def __le__(self, other):
+        """
+        Comparison based on year and term
+        HS2020 -> FS2020 -> HS2021 -> ..
+        Tie-breaker: alphanumerical order of name
+        """
+        if self.term ==  other.term and self.year == other.year:
+            return self.name <= other.name
+        elif self.year == other.year:
+            return self.term.lower() == "hs"
+        else:
+            return self.year <= other.year
+
+    def __lt__(self, other):
+        if self.term == other.term and self.year == other.year:
+            return self.name < other.name
+        elif self.year == other.year:
+            return self.term.lower() == "hs"
+        else:
+            return self.year < other.year
+
+    def __eq__(self, other):
+        "Does NOT compare exams etc. ==> only used for sorting!!"
+        return self.term == other.term and self.year == other.year and self.name == other.name
+
+    # TODO maybe add other comparisons, check again if that makes sense.
 
     def update_name(self, new_name: str):
         self.name = new_name
@@ -112,8 +138,6 @@ class Class:
         old_categories = self.categories
         self.categories = []
         self.initialize_categories_from_old(old_categories)
-
-
 
     def store_to_database(self):
         """
@@ -558,6 +582,17 @@ class Class:
         self.store_exams(exam)
 
 
+    def fetch_exams(self):
+        """
+        Returns a simple list of exams in all categories
+        :return:
+        """
+        res = []
+        for cat in self.categories:
+            for exam in cat.exams:
+                res.append(exam)
+
+        return res
 
     def create_grade_report(self, output_location: str = None, output_name: str = None,  output_type = "xlsx"):
         """

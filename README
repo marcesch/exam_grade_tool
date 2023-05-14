@@ -50,7 +50,10 @@ categorization:
 - [2] add cateogry mode "bonus" => e.g. max 0.25 noten bonus
 - [2] add pdf-report for semesternoten / grade report grades.
 - [1] add check that the user does not include too many categories (screws up loading / storing) -- cap at 15 or so
-
+- [1] make sure to store everyhting to disk appropriately -- e.g. interrupt shutdown or so?
+- [1] use https://docs.python.org/3/library/atexit.html to deal with shutdowns
+- [1] Use this to open pdf: https://stackoverflow.com/questions/434597/open-document-with-default-os-application-in-python-both-in-windows-and-mac-os
+- [1] support floats for poitns (e.g. 22.5)
 
 ### Stuff to ask selina
 - layout for folders (ish imporant)
