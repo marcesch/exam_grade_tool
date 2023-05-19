@@ -52,111 +52,36 @@ class App_OverviewClass(TKMT.ThemedTKinterFrame):
 
         self.label_frame = self.addLabelFrame("Class 2")
         self.label_frame.Label("This is some text for new class window")
-        self.caller_tabs = tabs
         self.ov: Overview = ov
         self.class_obj: Class = class_obj
-        assert len(self.caller_tabs) > 0
-        assert len(self.class_obj.students) > 0, f"Class {class_obj}\n"
 
         self.panedWindow1 = self.PanedWindow(f"Overview Class {self.class_obj.name}")
         self.pane1 = self.panedWindow1.addWindow()
 
-        self.notebook = self.pane1.Notebook("Notebook Exam overview")
-        self.tabs = []
-        self.create_tabs()
-
-        for tab in self.tabs:
-            self.create_student_overview(tab)
-            self.create_categories_overview(tab)
-            self.create_exam_overview(tab)
-            self.create_utility_bar(tab)
-
-        # self.create_categories_overview()
-        # self.create_exam_overview()
+        # self.notebook = self.pane1.Notebook("Notebook Exam overview")
+        # self.tabs = []
+        # self.create_tabs()
 
 
-        self.run()
 
-    def create_utility_bar(self, tab):
-        """
-        Prints utility bar on the right hand side. Potential buttons include:
-        - Create grade report (check that sum of weights is 1)
-        - add exam
-        - add category
-        - add student
-        - rename class  -> maybe also handle with double click on name of class or so
-        - update semester
-
-        :return:
-        """
-        tab.nextCol()
-        section_frame = tab.addFrame("name")
-        section_frame.Label("student asdfe")
-
-        raise NotImplementedError
-
-    def create_exam_overview(self, tab):
-        """
-        Prints list of all exams for that class for that year/term
-        :return:
-        """
-
-        # prepare exam data for treeview
-        exams = []
-        for cat in self.class_obj.categories:
-            for exam in cat.exams:
-                exams.append({"name": exam.name, "cat": cat.name})
-
-
-        tab.frame_exam = tab.addLabelFrame("Prüfungen")
-        tab.frame_exam.Label("Mehr PPP text")
-
-        tab.frame_exam.treeview_exam = tab.frame_exam.Treeview(["Prüfung", "Kategorie"], [120, 120], 10, exams, 'subfiles',
-                                    ['name', 'cat'])
-        tab.frame_exam.treeview_exam.bind("<<TreeviewSelect>>", self.on_click_exam)
-
-
-    def create_categories_overview(self, tab):
-        """
-        Prints list of all categories and their weights
-        :return:
-        """
-
-        tab.nextCol()
-        tab.frame_cat = tab.addLabelFrame("Kategorien")
-        tab.frame_cat.Label("Mehr text")
-
-        # prepare categories data for treeview
-        categories = []
-        for cat in self.class_obj.categories:
-            categories.append({"name": cat.name, "weight": cat.weight, "type": cat.grading_type})
-
-        tab.frame_cat.treeview_cat = tab.frame_cat.Treeview(["Kategorie", "Gewicht", "Bewertungstyp"], [120, 120, 120], 10, categories, 'subfiles',
-                                    ['name', 'weight', 'type'])
-        tab.frame_cat.treeview_cat.bind("<<TreeviewSelect>>", self.on_click_category)
-
-
-    def create_student_overview(self, tab):
-        """
-        Prints a table of all students for this class, probably to the left.
-
-        :return:
-        """
-
-        # TODO support for other tabs -- only select those students whcih actually belong to said class
-
-        # prepare student list for Treeview
         students = []
         for stud in self.class_obj.students:
             students.append({'lastname': stud.lastname, 'firstname': stud.firstname})
 
         students.sort(key=lambda stud: (stud['lastname'], stud['firstname']))
 
-        tab.frame_class = tab.addLabelFrame("Klassenübersicht")
-        tab.frame_class.Label("Here I could also put some description")
+        self.pane1.treeview_classlist = self.pane1.Treeview(["Nachname", "Vorname"], [120, 120], 10, students, 'subfiles',
+                                              ['lastname', 'firstname'])
+        self.pane1.treeview_classlist.bind("<<TreeviewSelect>>", self.on_click_student)
 
-        tab.frame_class.treeview = tab.frame_class.Treeview(["Nachname", "Vorname"], [120, 120], 10, students, 'subfiles', ['lastname', 'firstname'])
-        tab.frame_class.treeview.bind("<<TreeviewSelect>>", self.on_click_student)
+        self.pane1.nextCol()
+        self.pane1.lf = self.pane1.addLabelFrame("Some entry")
+        self.pane1.lf.Label("here I can enter some text")
+        self.pane1.treeview_classlist2 = self.pane1.lf.Treeview(["Nachname", "Vorname"], [120, 120], 10, students,
+                                                            'subfiles',
+                                                            ['lastname', 'firstname'])
+        self.run()
+
 
     def create_tabs(self):
         """
@@ -188,8 +113,6 @@ class App_OverviewClass(TKMT.ThemedTKinterFrame):
     def on_click_category(self, event):
         raise NotImplementedError
 
-    def on_click_exams(self, event):
-        raise NotImplementedError
 
 
 
