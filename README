@@ -55,6 +55,7 @@ categorization:
 - [1] Use this to open pdf: https://stackoverflow.com/questions/434597/open-document-with-default-os-application-in-python-both-in-windows-and-mac-os
 - [1] support floats for points (e.g. 22.5)
 - [1] If user closes GUI window, only close current view (instead of entire program)
+- [2] add tutorial button on overview
 
 ### Stuff to ask selina
 - layout for folders (ish imporant)

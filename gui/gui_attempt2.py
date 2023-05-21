@@ -1,6 +1,7 @@
 """
 Demo of all widgets
 """
+from tkinter import BOTH
 
 import TKinterModernThemes as TKMT
 from functools import partial
@@ -12,6 +13,9 @@ from backend.overview import Overview
 from backend.classes import Class
 from backend.exam import Exam
 from backend.student import Student
+from tkintertable import TableCanvas, TableModel
+from tkintertable.Testing import sampledata
+data=sampledata()
 
 
 def fun_print_hello():
@@ -22,6 +26,36 @@ def fun_print_ciao():
 
 def fun_action(first, last):
     print(f"some action {first} {last}")
+
+class EntryPopup(tk.Entry):
+
+    def __init__(self, parent, iid, text, **kw):
+        ''' If relwidth is set, then width is ignored '''
+        super().__init__(parent, **kw)
+        self.tv = parent
+        self.iid = iid
+
+        self.insert(0, text)
+        # self['state'] = 'readonly'
+        # self['readonlybackground'] = 'white'
+        # self['selectbackground'] = '#1BA1E2'
+        self['exportselection'] = False
+
+        self.focus_force()
+        self.bind("<Return>", self.on_return)
+        self.bind("<Control-a>", self.select_all)
+        self.bind("<Escape>", lambda *ignore: self.destroy())
+
+    def on_return(self, event):
+        self.tv.item(self.iid, text=self.get())
+        self.destroy()
+
+    def select_all(self, *ignore):
+        ''' Set selection on the whole text '''
+        self.selection_range(0, 'end')
+
+        # returns 'break' to interrupt default key-bindings
+        return 'break'
 
 class App_OverviewClass(TKMT.ThemedTKinterFrame):
 
@@ -50,8 +84,6 @@ class App_OverviewClass(TKMT.ThemedTKinterFrame):
         super().__init__("TKinter Custom Themes Demo", theme, mode,
                          usecommandlineargs=usecommandlineargs, useconfigfile=usethemeconfigfile)
 
-        self.label_frame = self.addLabelFrame("Class 2")
-        self.label_frame.Label("This is some text for new class window")
         self.caller_tabs = tabs
         self.ov: Overview = ov
         self.class_obj: Class = class_obj
@@ -59,42 +91,85 @@ class App_OverviewClass(TKMT.ThemedTKinterFrame):
         assert len(self.class_obj.students) > 0, f"Class {class_obj}\n"
 
         self.panedWindow1 = self.PanedWindow(f"Overview Class {self.class_obj.name}")
-        self.pane1 = self.panedWindow1.addWindow()
 
-        self.notebook = self.pane1.Notebook("Notebook Exam overview")
-        self.tabs = []
-        self.create_tabs()
+        frame1 = self.addFrame("name")
+        print(type(frame1.master))
 
-
-        for tab in self.tabs:
-            students = []
-            for stud in self.class_obj.students:
-                students.append({'lastname': stud.lastname, 'firstname': stud.firstname})
-
-            students.sort(key=lambda stud: (stud['lastname'], stud['firstname']))
-
-            tab.frame_class = tab.addLabelFrame("Klassenübersicht")
-            tab.frame_class.Label("Text zur Klassenübersicht")
-            tab.treeview_classlist = tab.frame_class.Treeview(["Nachname", "Vorname"], [120, 120], 10, students, 'subfiles',
-                                        ['lastname', 'firstname'])
-            tab.treeview_classlist.bind("<<TreeviewSelect>>", self.on_click_student)
-
-            tab.nextCol()
-            tab.frame_cat = tab.addLabelFrame("Here is some text")
-            tab.frame_cat.Label("With some more text here")
-
-            categories = []
-            for cat in self.class_obj.categories:
-                categories.append({"name": cat.name, "weight": cat.weight, "type": cat.grading_type})
-
-            tab.treeview_categories = tab.frame_cat.Treeview(["Kategorie", "Gewicht", "Bewertungstyp"], [120, 120, 120], 10,
-                                                   categories, 'subfiles',
-                                                   ['name', 'weight', 'type'])
-            tab.treeview_categories.bind("<<TreeviewSelect>>", self.on_click_category)
-
+        ttk_master = frame1.master
+        f = tk.Frame(ttk_master)
+        f.pack(fill=BOTH, expand=1)
+        table = TableCanvas(f, data=data)
+        table.show()
         self.run()
 
 
+        #
+        # self.pane1 = self.panedWindow1.addWindow()
+        #
+        # self.notebook = self.pane1.Notebook("Notebook Exam overview")
+        # self.tabs = []
+        # self.create_tabs()
+        #
+        #
+        # for tab in self.tabs:
+        #     students = []
+        #     for stud in self.class_obj.students:
+        #         students.append({'lastname': stud.lastname, 'firstname': stud.firstname})
+        #
+        #     students.sort(key=lambda stud: (stud['lastname'], stud['firstname']))
+        #
+        #     tab.frame_class = tab.addLabelFrame("Klassenübersicht")
+        #     tab.frame_class.Label("Text zur Klassenübersicht")
+        #     tab.treeview_classlist = tab.frame_class.Treeview(["Nachname", "Vorname"], [120, 120], 10, students, 'subfiles',
+        #                                 ['lastname', 'firstname'])
+        #     tab.treeview_classlist.bind("<<TreeviewSelect>>", self.on_click_student)
+        #
+        #     tab.nextCol()
+        #     tab.frame_cat = tab.addLabelFrame("Here is some text")
+        #     tab.frame_cat.Label("With some more text here")
+        #
+        #     categories = []
+        #     for cat in self.class_obj.categories:
+        #         categories.append({"name": cat.name, "weight": cat.weight, "type": cat.grading_type})
+        #
+        #     tab.treeview_categories = tab.frame_cat.Treeview(["Kategorie", "Gewicht", "Bewertungstyp"], [120, 120, 120], 10,
+        #                                            categories, 'subfiles',
+        #                                            ['name', 'weight', 'type'])
+        #     tab.treeview_categories.bind("<<TreeviewSelect>>", self.onDoubleClick)
+        #
+        # self.run()
+
+    def onDoubleClick(self, event):
+        ''' Executed, when a row is double-clicked. Opens
+        read-only EntryPopup above the item's column, so it is possible
+        to select text '''
+
+        # close previous popups
+        # self.destroyPopups()
+        tab = self.tabs[0]
+
+        # what row and column was clicked on
+        rowid = tab.treeview_categories.identify_row(event.y)
+        column = tab.treeview_categories.identify_column(event.x)
+
+        print("HERE")
+        print(event)
+        print(rowid)
+        print(column)
+        print("here")
+        return
+
+        # get column position info
+        x, y, width, height = tab.treeview_categories.bbox(rowid, column)
+
+        # y-axis offset
+        # pady = height // 2
+        pady = 0
+
+        # place Entry popup properly
+        text = tab.treeview_categories.item(rowid, 'text')
+        self.entryPopup = EntryPopup(tab.treeview_categories, rowid, text)
+        self.entryPopup.place(x=0, y=y + pady, anchor=W, relwidth=1)
 
     def create_tabs(self):
         """

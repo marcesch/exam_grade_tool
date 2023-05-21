@@ -341,6 +341,32 @@ class Class:
         else:
             raise RuntimeError(f"Could not find that category in the list {self.categories}")
 
+    def change_category(self, exam_name: str, new_cat: str):
+        """
+        Changes category of exam
+        :param exam:
+        :param new_cat:
+        :return:
+        """
+
+        # remove exam from list of its original category
+        exam = self.get_exam(exam_name)
+        old_cat = self.find_category(exam.category)
+        try:
+            old_cat.exams.remove(exam)
+        except:
+            raise RuntimeError(f"Could not find exam {exam} in category {old_cat}")
+
+        # add exam to exam list in new_cat
+        try:
+            new_cat = self.find_category(new_cat)
+        except:
+            logging.warning(f"Could not find category {new_cat}, creating it with weight 0. Change manually later on")
+            new_cat = self.add_category({"name": new_cat, "weight": 0})
+        new_cat.exams.append(exam)
+
+        exam.category = new_cat
+
     def add_category(self, cat: dict[str: str]):
         logging.info("Adding category")
         # TODO check if categroy already exists
@@ -600,6 +626,18 @@ class Class:
                 res.append(exam)
 
         return res
+
+    def get_exam(self, exam_name: str):
+        """
+        Gets exam object based on name
+        :return:
+        """
+        for ex in self.fetch_exams():
+            if ex.name == exam_name:
+                return ex
+
+        raise RuntimeError(f"Could not find exam {exam_name} in list {self.fetch_exams()}")
+
 
     def create_grade_report(self, output_location: str = None, output_name: str = None,  output_type = "xlsx"):
         """

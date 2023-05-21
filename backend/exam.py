@@ -22,9 +22,8 @@ class Exam:
         self.name = name
         # term = hs23 etc.
         self.term = term
-        self.classname = classname
-        # TODO maybe change category: str to category: Category
-        self.category = category
+        self.class_obj: str = classname
+        self.category: str = category
         self.max_points = max_points
         self.points_needed_for_6 = points_needed_for_6
         if min_grade != 1:
@@ -35,6 +34,7 @@ class Exam:
         if self.points != None:
             self.points = points
         self.computation_strategy = grade_computation
+        self.computation_strategies = ["linear"]
         self.grades: dict[Student, float] = {}
         if grades != None:
             logging.warning("Manually overwriting grades with user input. Might be inconsistent with points received by students")
@@ -56,11 +56,37 @@ class Exam:
     def __repr__(self):
         return f"E-{self.name}-{self.term}"
 
+    def rename(self, new_name: str):
+        """
+        Renams the exam
+        :param new_name:
+        :return:
+        """
+        # TODO maybe include some checks
+        self.name = new_name
+
+    def change_category(self, new_category: str):
+        """
+        Changes category of the exam:
+        1. Add exam to class_obj.new_category
+        2. Remove exam from class_obj.old_cat
+        3. set self.cat
+        :param new_category:
+        :return:
+        """
+
+        # TODO the caller needs to take care of changing the category of exam / adding to appropriate lists -> can't deal with circular imports
+        self.category = new_category
+
     def compute_single_grade(self, points):
         """
         :param points:
         :return:
         """
+
+        if self.computation_strategy not in self.computation_strategies:
+            raise NotImplementedError(f"Did not implement other ways to compute a grade yet\n Try using linear instead of {self.computation_strategy}")
+
         if points > self.max_points:
             logging.warning("Got too many points, capping at maximum")
             points = self.max_points
@@ -70,8 +96,6 @@ class Exam:
             grade = round(grade, 4)
             if grade >= 6:
                 grade = 6
-        else:
-            raise NotImplementedError(f"Did not implement other ways to compute a grade yet\n Try using linear instead of {self.computation_strategy}")
 
         return grade
 
