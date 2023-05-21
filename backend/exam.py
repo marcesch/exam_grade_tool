@@ -23,6 +23,7 @@ class Exam:
         # term = hs23 etc.
         self.term = term
         self.classname = classname
+        # TODO maybe change category: str to category: Category
         self.category = category
         self.max_points = max_points
         self.points_needed_for_6 = points_needed_for_6
@@ -79,6 +80,9 @@ class Exam:
         Using the points, compute the corresponding grades according to grade_computation strategy
         :return:
         """
+
+        if self.points == None:
+            return
 
         old_grades = self.grades
 

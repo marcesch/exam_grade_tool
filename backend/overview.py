@@ -42,6 +42,7 @@ class Overview:
 
     def __init__(self):
         self.classes = []
+        self.folderpath = FOLDERPATH
 
     def get_class(self, name, year, term):
         for class_obj in self.classes:
@@ -215,7 +216,7 @@ class Overview:
     #     # TODO also load report id
     #
     #     if path_classlist == None:
-    #         dirpath = FOLDERPATH
+    #         dirpath = self.folderpath
     #     else:
     #         # TODO maybe include some checks on validity of path
     #         dirpath = path_classlist
@@ -246,7 +247,7 @@ class Overview:
         """
 
         # Loop through all files in the directory
-        for filename in os.listdir(FOLDERPATH):
+        for filename in os.listdir(self.folderpath):
             # Check if the file has a .csv extension
             if filename.endswith(".csv"):
                 print(f"Extracting data from filename {filename}")
@@ -254,7 +255,7 @@ class Overview:
                 class_obj = Class(name, term, int(year))
                 print(f"Trying to open {filename}")
                 try:
-                    with open(os.path.join(FOLDERPATH, filename), 'r') as f:
+                    with open(os.path.join(self.folderpath, filename), 'r') as f:
                         lines = f.readlines()
                         header = lines[0].strip().split(",")
                         if header[0] != "Nachname" or header[1] != "Vorname":
@@ -269,7 +270,7 @@ class Overview:
 
                     # get report_id (to make sure not to create reports multiple times)
                     max_report_no = 0
-                    for file in os.path.join(FOLDERPATH, filename[:-4]):
+                    for file in os.path.join(self.folderpath, filename[:-4]):
                         # TODO test this functionality
                         if "report" in file:
                             try:

@@ -103,13 +103,16 @@ class Class:
         # or use self.filename_class = self.filename_class_base + "/" + classname_complete + ".csv"
         self.filename_base_exam = self.filename_class_base + "/pruefungen/"
 
-    def update_semester(self):
+    def update_semester(self, new_name = None):
         """
         :return:
 
         updates the semester by one term
         creates new file for grades
         """
+        # TODO keep old names / ... in array previous_semesters -- can be used in GUI to switch tabs
+
+
         self.report_id = 0
         oldterm = self.term
         oldyear = self.year
@@ -118,7 +121,10 @@ class Class:
             self.term = "fs"
         else:
             self.term = "hs"
-            logging.info("Consider updating the name of the class! It has likely changed, e.g. from 3a to 4a")
+            if new_name == None:
+                logging.info("Consider updating the name of the class! It has likely changed, e.g. from 3a to 4a")
+                new_name = self.name
+            self.update_name(new_name)
 
         logging.info(f"Updating term for class {self.name} from {oldterm} {oldyear} to {self.term} {self.year}")
         logging.info(f"Removing old class list, updating with new classlist")
@@ -138,6 +144,7 @@ class Class:
         old_categories = self.categories
         self.categories = []
         self.initialize_categories_from_old(old_categories)
+
 
     def store_to_database(self):
         """
