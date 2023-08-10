@@ -1,61 +1,7 @@
 # README
 
 ## TODOs
-Collection of ideas, "feature requests", TODOs in code, ..
-
-categorization:
-[1]: important functionality to be added
-[2]: nice to have functionality, or doing things more properly / cleanly
-[3]: allowing stuff to be distributed cross platform and be used by more than just one user / one system
-[4]: nice-to-have-features if I want to build this thing BIG
-
-- [3] Distinguish between filesystem => use os.path.join() for filepaths, ...
-- [2] sanitize user inputs everywhere
-- [2] clean up code
-- [2] make nice exam summaries
-- [1] consistently use xlsx as default instead of csv
-    - Except for where I need to load information from the disk.
-- [1] permissions for files using `os.chmod(filename, 0o444), probably 0x664 (root can edit)
-    - RW for all exam data
-    - R on student list -- don't want users to mess with that
-- [1] clean up folder / file names, it's a mess currently
-- [1] test the shit out of the bugger
-- [1] do frontend
-- [4] do the thing securely, like encrypting exam data, ...
-- [3] proper logging everywhere
-- [1] make sure implementation can deal with student not writing exams
-- [2] data persistence: how and when to store what
-- [3] packaging -- create a single executable file from entire project
-    - need to restructure project in a reasonable way
-- [4] Add functionality for restoring stuff from the .trash folder within program
-- [2] start "documentation" of workflows and project layout -- e.g., after calling method XY, class gets stored on disk automatically. After addign student, has to be invoked manually. Etc.
-- [2] deal with folderpath reasonably
-- [2] remove support for csv files -- not needed anyway; users won't be able to deal with that shit.
-    - if I want to keep it, I'd rather write a short function that converts the excel files to a csv.
-- [4] support english
-- [4] keep index of deleted files / contents in trash
-- [1] Better string handling for student names -- store everyhting as .lower(), show as capitalize()
-    - accept lower/upper case input
-- [3] add grading mode "curve fitting": instead of linear, say where the 4 is and where the 6 is
-    - can also do that with arbitrary many grades; use linear interapolation for grades in between
-    - use fancy interpolations because of reasons, alternatively
-- [1] Include checks that exam and category names differ
-- [1] Implement __eq__ for exam / category -> use with above point to infer whether exam should be renamed (different grades) or whehter user meant same exam (same name, poits, gradse)
-- [1] pick files using file dialog: https://stackoverflow.com/questions/9319317/quick-and-easy-file-dialog-in-python
-- [3] for the lolz: add exam-calculation mode "Curve fitting" which fits to perfect gauss curve
-- [3] add more generaical mode of "streichnote" -- allow cancelling 1, 2, 3, ... grades
-- [1] mb don't add grade report (for average grades etc) as single file -- instead, simply append it.
-    - or add it as a separate arbeitsmappe -- that does not screw up my loading function
-- [2] how to deal with deleted students -- they will always re-appear when reloading program (maybe inlucde a hidden column with a delted-flag or put that in the csv)
-- [2] add cateogry mode "bonus" => e.g. max 0.25 noten bonus
-- [2] add pdf-report for semesternoten / grade report grades.
-- [1] add check that the user does not include too many categories (screws up loading / storing) -- cap at 15 or so
-- [1] make sure to store everyhting to disk appropriately -- e.g. interrupt shutdown or so?
-- [1] use https://docs.python.org/3/library/atexit.html to deal with shutdowns
-- [1] Use this to open pdf: https://stackoverflow.com/questions/434597/open-document-with-default-os-application-in-python-both-in-windows-and-mac-os
-- [1] support floats for points (e.g. 22.5)
-- [1] If user closes GUI window, only close current view (instead of entire program)
-- [2] add tutorial button on overview
+See TODO file
 
 ### Stuff to ask selina
 - layout for folders (ish imporant)
@@ -67,6 +13,25 @@ categorization:
 
 ### GUI stuff
 use
-
 - https://github.com/RobertJN64/TKinterModernThemes/blob/master/TKinterModernThemes/examples/examplelauncher.py
 - use Treeview with one level of hierarchy for List / Columns
+
+or
+- https://labdeck.com/python-designer/python-gui-designer/
+for easier design
+EDIT; only works for windows, use glade instead:
+ 1. create GUI and store as .glade (glorified .xml)
+ 2. use https://python-gtk-3-tutorial.readthedocs.io/en/latest/builder.html to create code
+oor PyQt
+- [overview] https://medium.com/@lelandzach/building-python-desktop-app-guis-in-2019-macos-windows-linux-19dc71485d60
+- https://build-system.fman.io/qt-designer-download
+- [installation] https://www.pythonguis.com/installation/install-qt-designer-standalone/
+    installation is complete, use qt designer to design, TRY ON MAC!
+- [tutorial] https://realpython.com/qt-designer-python/#building-main-windows-with-qt-designer-and-python
+
+=> I've settled on PyQt for now
+
+### Distribution
+Try pyinstaller
+- [mac] https://www.pythonguis.com/tutorials/packaging-pyqt5-applications-pyinstaller-macos-dmg/
+- [windows] https://www.pythonguis.com/tutorials/packaging-pyqt5-pyside2-applications-windows-pyinstaller/

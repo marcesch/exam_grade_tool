@@ -14,6 +14,8 @@ from classes import Class
 # from student import Student
 from category import Category
 
+
+
 """
 TODO keep list of classes to index everything -- in GUI, user can then select which class to edit
 TODO add functionality to delete old classes
@@ -31,8 +33,7 @@ TODO don't always store everything on disk, only on major changes and on shutdow
 TODO add fucntionality to create exam summary as a PDF or so (average, mean, quartils, standard deviation, ..)
 """
 
-FOLDERPATH = "./tmp/klassen/"
-
+FOLDERPATH = "/home/marcesch/noten/tmp/klassen/"
 
 class Overview:
     """
@@ -99,6 +100,8 @@ class Overview:
             dirpath = class_obj.filename_base_exam
         else:
             dirpath = path_folder_exams
+
+        logging.info(f"Looking at {dirpath} for class data")
 
         # TODO include checks on validity / existence of folder
 
@@ -167,6 +170,7 @@ class Overview:
                     break
                 student = class_obj.get_student(firstname, lastname)
                 if row[col_index] != None:
+                    print(f"Here with curr row: {(row[col_index - 1]).value}\npath {path}")
                     points_exam[student] = int((row[col_index-1]).value)
                 try:
                     if row[col_index ] != None:
@@ -246,9 +250,12 @@ class Overview:
         :return:
         """
 
+
+
         # Loop through all files in the directory
         for filename in os.listdir(self.folderpath):
             # Check if the file has a .csv extension
+            print(f"Checking file {filename} on folder {self.folderpath}")
             if filename.endswith(".csv"):
                 print(f"Extracting data from filename {filename}")
                 year, term, name = filename[:-4].split("_", 2)

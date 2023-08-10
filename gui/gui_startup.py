@@ -3,13 +3,18 @@ from functools import partial
 import tkinter as tk
 import sys
 import json
+
+
 sys.path.append("/home/marcesch/privat/Selina/Notenuebersicht/backend/")
 from gui_overview_all_classes import App_OverviewClasses
 
 
 
+
 def startup_process():
     print("Somewhere here I could start initializing all classes, .. loaded from disk => use that in memory (presumably reasonably small amount of data) and load from disk only once ")
+
+
 
 def load_config():
     """

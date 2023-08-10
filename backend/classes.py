@@ -10,7 +10,9 @@ from category import Category
 from exam import Exam
 from student import Student
 
-FOLDERPATH = "./tmp/klassen/"
+FOLDERPATH = "/home/marcesch/noten/tmp/klassen/"
+
+
 
 """"
 TODO: sanitize / ... students names... what if there are sume ugly shit thigns like accents etc?

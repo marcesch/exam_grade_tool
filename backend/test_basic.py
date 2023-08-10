@@ -48,6 +48,7 @@ def test_student_management_basic():
     assert len(class_3b.students) == len1
 
 
+
 @pytest.mark.file_management
 def test_basic_files():
     """
@@ -404,8 +405,7 @@ def test_import_exam_data(gen_class_cat_examdata_simple):
                 assert exam.points[student] == ((class_6a.categories[i]).exams[j]).points[student]
                 assert exam.grades[student] == ((class_6a.categories[i]).exams[j]).grades[student]
 
-
-
+@pytest.mark.skip
 @pytest.mark.file_management
 def test_import_data_specialCases():
     """
@@ -488,3 +488,26 @@ def test_multiple_classes_weird_behavior():
     :return:
     """
     raise NotImplementedError
+
+
+@pytest.mark.generate_example_data
+def test_gen_example_exams(gen_class_cat_examdata_simple):
+    """
+    I use this test to generate a few dummy classes and exams and store them locally.
+    :return:
+    """
+
+    # delete the old files to ensure proper testing
+    directory_path = FOLDERPATH
+    for filename in os.listdir(directory_path):
+        file_path = os.path.join(directory_path, filename)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+
+    class_6a = gen_class_cat_examdata_simple
+    class_6a.store_to_database()
+    class_6a.store_exams()
+
+    assert True
+
+

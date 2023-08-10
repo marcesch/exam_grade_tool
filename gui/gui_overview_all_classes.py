@@ -36,13 +36,15 @@ class App_OverviewClasses(TKMT.ThemedTKinterFrame):
         super().__init__("Overview over all classes", theme, mode,
                          usecommandlineargs=usecommandlineargs, useconfigfile=usethemeconfigfile)
 
+        # TODO fix folderpaths!!! they are not correct anymore as I moved stuff to backend and gui folders
         self.ov = Overview()
-
+        self.ov.folderpath = "/home/marcesch/noten/tmp/klassen"
         # TODO use that instead of testing init function
-        # self.ov.load_classes()
-        # for class_obj in self.ov.classes:
-        #     self.ov.load_categories_and_exams(class_obj)
-        self.initialize_dummy_classes()
+        self.ov.load_classes()
+        for class_obj in self.ov.classes:
+            print(f"name:  {class_obj.filename_base_exam[1:]}")
+            self.ov.load_categories_and_exams(class_obj)
+        # self.initialize_dummy_classes()
 
         self.label_frame = self.addLabelFrame("Tool zur Notenberechnung")
         text1 = f"Mit dieser Anwendung lassen sich Noten von verschiedenen Klassen automatisch berechnen. Im Grunde ist das Ganze ein glorifiziertes Excel-Dokument, welches auch ohne hohe Technikkenntnisse verwendbar sein sollte."
@@ -84,8 +86,6 @@ class App_OverviewClasses(TKMT.ThemedTKinterFrame):
                 class6a.add_exam("voci1", cat.name, 15)
                 class6a.add_exam("voci2", cat.name, 15)
                 class6a.add_exam("voci2", cat.name, 15)
-
-
 
         self.ov.classes.append(Class("3b", "FS", 2021))
         self.ov.classes.append(Class("4b", "HS", 2021))
