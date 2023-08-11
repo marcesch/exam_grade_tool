@@ -36,7 +36,7 @@ categorization:
 - [1] Use this to open pdf: https://stackoverflow.com/questions/434597/open-document-with-default-os-application-in-python-both-in-windows-and-mac-os
 - [1] support floats for points (e.g. 22.5)
 - [2] add checks on each gui-function call to catch any potential error.
-
+- [3] when adding new class, use categories from most recent class as template
 
 
 
@@ -51,7 +51,11 @@ categorization:
 - [3] add tutorial button on overview => or make thing intuitive
 - [3] allow pasting into gui-table from excel or so
 - [4] Find way to do "recent DBs" in menu bar
-
+- [1] make newest semester tab active during startup
+- [2] Update semester in main/startup window
+- [1] in klassenübersicht: schnitt und anzahl prüfung pro student in treeview anzeigen
+- [1] in exam: schnitt in treeview anzeigen
+- [1] kategorienübersicht rechts
 
 
 ## DISTRIBUTION
@@ -75,6 +79,7 @@ categorization:
 - [3] add more generaical mode of "streichnote" -- allow cancelling 1, 2, 3, ... grades
 - [2] add cateogry mode "bonus" => e.g. max 0.25 noten bonus
 - [2] add pdf-report for semesternoten / grade report grades.
+- [3] Undo / Redo feature (google and / or store last performed action)
 
 
 
@@ -84,4 +89,5 @@ categorization:
 - [1] Exclude "try outs" / tests for GUI stuff from this projects
 - [3] start "documentation" of workflows and project layout -- e.g., after calling method XY, class gets stored on disk automatically. After addign student, has to be invoked manually. Etc.
 - [3] Write tutorial / documentation for myself on how GUI shizzl works
+- [1] write short bash script to update all .py files from the respective .ui file
 

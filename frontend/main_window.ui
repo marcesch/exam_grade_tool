@@ -31,7 +31,7 @@
         <item>
          <widget class="QTabWidget" name="tabWidget">
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="default_tab">
            <attribute name="title">
@@ -64,7 +64,13 @@
            </attribute>
            <layout class="QGridLayout" name="gridLayout_2">
             <item row="0" column="0">
-             <widget class="QTreeView" name="treeView"/>
+             <widget class="QTreeWidget" name="treeWidget">
+              <column>
+               <property name="text">
+                <string notr="true">1</string>
+               </property>
+              </column>
+             </widget>
             </item>
            </layout>
           </widget>
@@ -76,6 +82,9 @@
            <layout class="QVBoxLayout" name="verticalLayout_2">
             <item>
              <widget class="QPushButton" name="button_details">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="text">
                <string>Details</string>
               </property>
@@ -90,6 +99,9 @@
             </item>
             <item>
              <widget class="QPushButton" name="button_deleteClass">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="text">
                <string>Delete Class</string>
               </property>

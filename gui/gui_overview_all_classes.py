@@ -41,9 +41,9 @@ class App_OverviewClasses(TKMT.ThemedTKinterFrame):
         self.ov.folderpath = "/home/marcesch/noten/tmp/klassen"
         # TODO use that instead of testing init function
         self.ov.load_classes()
-        for class_obj in self.ov.classes:
-            print(f"name:  {class_obj.filename_base_exam[1:]}")
-            self.ov.load_categories_and_exams(class_obj)
+        # for class_obj in self.ov.classes:
+        #     print(f"name:  {class_obj.filename_base_exam[1:]}")
+        #     self.ov.load_categories_and_exams(class_obj)
         # self.initialize_dummy_classes()
 
         self.label_frame = self.addLabelFrame("Tool zur Notenberechnung")

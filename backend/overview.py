@@ -48,7 +48,7 @@ class Overview:
 
     def get_class(self, name, year, term):
         for class_obj in self.classes:
-            if class_obj.name == name and class_obj.year == int(year) and class_obj.term == term:
+            if class_obj.name.lower() == name.lower() and class_obj.year == int(year) and class_obj.term.lower() == term.lower():
                 return class_obj
         raise RuntimeError(f"Did not find any class matching {name} {term} {year}")
 
