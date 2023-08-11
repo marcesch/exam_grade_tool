@@ -9,10 +9,10 @@ import openpyxl
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 
 
-from exam import Exam, Student
-from classes import Class
+from backend.exam import Exam, Student
+from backend.classes import Class
 # from student import Student
-from category import Category
+from backend.category import Category
 
 
 
@@ -44,6 +44,7 @@ class Overview:
     def __init__(self):
         self.classes = []
         self.folderpath = FOLDERPATH
+        self.terms = []
 
     def get_class(self, name, year, term):
         for class_obj in self.classes:
@@ -245,22 +246,21 @@ class Overview:
         """
         loads list of classes from memory
         => how to deal with multiple intstances of classes? => mb load all of them, let user decide which to pick.
-
-        => when does it get called? on startup, probably?
         :return:
         """
 
-
-
         # Loop through all files in the directory
+        print(f"Looking at {self.folderpath}")
         for filename in os.listdir(self.folderpath):
             # Check if the file has a .csv extension
             print(f"Checking file {filename} on folder {self.folderpath}")
             if filename.endswith(".csv"):
                 print(f"Extracting data from filename {filename}")
                 year, term, name = filename[:-4].split("_", 2)
+                if not self.terms.__contains__([year, term]):
+                    self.terms.append([year, term])
                 class_obj = Class(name, term, int(year))
-                print(f"Trying to open {filename}")
+                # print(f"Trying to open {filename}")
                 try:
                     with open(os.path.join(self.folderpath, filename), 'r') as f:
                         lines = f.readlines()
@@ -270,7 +270,7 @@ class Overview:
                                 "First row of CSV file should contain the strings 'Nachname' and 'Vorname'")
                         for line in lines[1:]:
                             lastname, firstname = line.strip().split(",")
-                            print(f"Got here with {firstname}, {lastname}")
+                            # print(f"Got here with {firstname}, {lastname}")
                             student = Student(firstname, lastname)
                             class_obj.students.append(student)
                     self.classes.append(class_obj)
@@ -296,3 +296,8 @@ class Overview:
                         logging.error(f"Could not create class from {filename}. \n"
                                       f"Make sure that the file is named correctly (YEAR_TERM_NAME) and does contain a list of students.\n"
                                       f"Make sure, the first row of the Row contains a field Nachname")
+
+
+        # also sort the terms list for easier use
+        # TODO maybe i fucked up the sorting
+        self.terms.sort()

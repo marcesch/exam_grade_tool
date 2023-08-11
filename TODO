@@ -12,13 +12,14 @@ categorization:
 - [2] Distinguish between filesystem => use os.path.join() for filepaths, ...
 - [2] consistently use xlsx as default instead of csv, remove support for csv files -- not needed anyway; users won't be able to deal with that shit.
     - if I want to keep it, I'd rather write a short function that converts the excel files to a csv.
+    - Or even use an SQL database to do it properly
 - [1] permissions for files using `os.chmod(filename, 0o444), probably 0x664 (root can edit)
     - RW for all exam data
     - R on student list -- don't want users to mess with that
 - [1] pick files using file dialog: https://stackoverflow.com/questions/9319317/quick-and-easy-file-dialog-in-python
 - [1] clean up folder / file names, it's a mess currently; make it more "resilient"
 - [2] data persistence: how and when to store what -> make sure it's fine the way it is
-
+    - maybe use SQL instead to do it properly (but seems to be an overkill, not enough data for SQL to be beneficial)
 - [3] proper logging everywhere
 - [1] make sure implementation can deal with student not writing exams
 - [1] Better string handling for student names -- store everyhting as .lower(), show as capitalize()
@@ -49,7 +50,7 @@ categorization:
 - [1] If user closes GUI window, only close current view (instead of entire program)
 - [3] add tutorial button on overview => or make thing intuitive
 - [3] allow pasting into gui-table from excel or so
-
+- [4] Find way to do "recent DBs" in menu bar
 
 
 

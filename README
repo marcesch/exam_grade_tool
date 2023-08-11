@@ -25,11 +25,24 @@ EDIT; only works for windows, use glade instead:
 oor PyQt
 - [overview] https://medium.com/@lelandzach/building-python-desktop-app-guis-in-2019-macos-windows-linux-19dc71485d60
 - https://build-system.fman.io/qt-designer-download
-- [installation] https://www.pythonguis.com/installation/install-qt-designer-standalone/
-    installation is complete, use qt designer to design, TRY ON MAC!
 - [tutorial] https://realpython.com/qt-designer-python/#building-main-windows-with-qt-designer-and-python
 
 => I've settled on PyQt for now
+
+#### PyQT6
+- Installation
+https://www.pythonguis.com/installation/install-qt-designer-standalone/
+    installation is complete, use qt designer to design, TRY ON MAC!
+
+- General
+https://www.pythonguis.com/tutorials/pyqt6-signals-slots-events/
+
+- Treeviews
+https://codereview.stackexchange.com/questions/263273/python-pyqt6-populate-qtreewidget-with-a-list-of-named-tuples
+
+1. Use Qt designer to create a .ui file (basically a .xml with description of the GUI elements)
+2. Compile a .py file generating the GUI with `pyuic6 -o main_window.py main_window.ui`
+3. Connect signals, fill treeviews, ...
 
 ### Distribution
 Try pyinstaller

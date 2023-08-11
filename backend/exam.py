@@ -4,7 +4,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 import matplotlib.pyplot as plt
 
-from student import Student
+from backend.student import Student
 
 """
 TODO exam modes:

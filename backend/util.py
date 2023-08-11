@@ -12,8 +12,8 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 import matplotlib.pyplot as plt
 from typing import Dict
-from student import Student
-from exam import Exam
+from backend.student import Student
+from backend.exam import Exam
 
 
 

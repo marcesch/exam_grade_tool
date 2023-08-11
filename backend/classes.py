@@ -6,9 +6,9 @@ import shutil
 import openpyxl
 import time
 
-from category import Category
-from exam import Exam
-from student import Student
+from backend.category import Category
+from backend.exam import Exam
+from backend.student import Student
 
 FOLDERPATH = "/home/marcesch/noten/tmp/klassen/"
 
