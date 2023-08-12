@@ -182,6 +182,7 @@ class Exam:
     def generate_summary_report(self, filename):
         """
         Taken from chatGPT, might want to check how well that stuff works
+        TODO replace filename with file path
         :param filename:
         :return:
         """
@@ -209,6 +210,8 @@ class Exam:
         fig.savefig('histogram.png')
 
         # Generate a PDF report
+        if not filename.endswith('.pdf'):
+            filename = filename + '.pdf'
         c = canvas.Canvas(filename, pagesize=letter)
         c.drawString(100, 700, f"Summary report for {self.name}")
         c.drawString(100, 675, f"Average points: {avg_points:.2f}")

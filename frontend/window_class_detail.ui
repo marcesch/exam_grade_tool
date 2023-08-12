@@ -40,7 +40,7 @@
                </widget>
               </item>
               <item>
-               <widget class="QTreeWidget" name="treeWidget">
+               <widget class="QTreeWidget" name="treeview_students">
                 <column>
                  <property name="text">
                   <string notr="true">1</string>
@@ -103,7 +103,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QTreeWidget" name="treeWidget_2">
+             <widget class="QTreeWidget" name="treeview_exams">
               <column>
                <property name="text">
                 <string notr="true">1</string>
@@ -171,7 +171,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QTreeWidget" name="treeWidget_3">
+             <widget class="QTreeWidget" name="treeview_categories">
               <column>
                <property name="text">
                 <string notr="true">1</string>

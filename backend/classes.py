@@ -49,6 +49,7 @@ class Class:
         self.report_id = 0
         self.supported_filetypes = ["xlsx", "csv"]
 
+
         if not os.path.exists(self.filename_base_exam):
             os.makedirs(self.filename_base_exam)
         else:
@@ -312,6 +313,17 @@ class Class:
             logging.warning(f"Class already contains student {first.capitalize()} {last.capitalize()}, skipping")
         else:
             self.students.append(Student(first, last))
+
+    def delete_student(self, student: Student):
+        """
+        Deletion based on student object instead of name. Probably gonna use that function consitently #TODO
+        :param student:
+        :return:
+        """
+        if student in self.students:
+            self.students.remove(student)
+        else:
+            raise RuntimeError(f"Could not find student {student} in class {self.name} {self.term}{self.year}")
 
     def remove_student(self, first: str, last: str):
         """
@@ -643,6 +655,14 @@ class Class:
 
         raise RuntimeError(f"Could not find exam {exam_name} in list {self.fetch_exams()}")
 
+    def delete_exam(self, exam: Exam):
+        """
+        Deletes exam from this class
+        :param exam:
+        :return:
+        """
+        # TODO checks etc.
+        raise NotImplementedError
 
     def create_grade_report(self, output_location: str = None, output_name: str = None,  output_type = "xlsx"):
         """
