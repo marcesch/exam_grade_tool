@@ -245,7 +245,10 @@ class Class:
         :param
         :return:
         """
-
+        # TODO error checking, throw runtime error
+        some_check = True
+        if not some_check:
+            raise RuntimeError(f"Error initializing students, cannot parse list {students}")
         for student in students:
             if self.contains_student(student["firstname"], student["lastname"]):
                 print(f"Warning! Received the same student a second time! Won't add anything")

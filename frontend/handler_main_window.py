@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import (
 
 from PyQt6.uic import loadUi
 
-from frontend.class_window_handler import WindowClassDetail
+from frontend.handler_window_class_detail import WindowClassDetail
 from main_window import Ui_MainWindow
 from backend.overview import Overview
 
@@ -103,11 +103,9 @@ class Window(QMainWindow, Ui_MainWindow):
                 # TODO better disselection of items (with esc, clicking somewhere else, ...)
                 treeview_clss.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
                 treeview_clss.setObjectName(f"treeView__{term[0]}_{term[1].lower()}")
-                # TODO maybe do this thing a little bit nicer (dynamic resizing of column widths)
                 header = treeview_clss.header()
                 header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-                header.setStretchLastSection(False)
-
+                header.setStretchLastSection(True)
 
                 # fill treeview with list of classes
                 treeview_clss.setColumnCount(3)
@@ -118,7 +116,6 @@ class Window(QMainWindow, Ui_MainWindow):
                 grid_layout.addWidget(treeview_clss, 0, 0, 1, 1)
                 self.treeViews_classes_in_term[f"{term[0]}_{term[1].lower()}"] = treeview_clss
 
-        return
 
     def test_function(self):
         raise NotImplementedError
@@ -131,16 +128,12 @@ class Window(QMainWindow, Ui_MainWindow):
         :return:
         """
 
-        """
-        Find way to disable certain buttons (delete class, details) if nothing in treeview is selected
-        """
         self.button_details.clicked.connect(self.handle_button_details)
-        self.button_addClass.clicked.connect(self.test_function)
+        self.button_addClass.clicked.connect(self.handle_button_add)
         self.button_deleteClass.clicked.connect(self.handle_button_delete)
-        self.button_saveDB.clicked.connect(self.test_function)
-        self.button_changeLocation.clicked.connect(self.test_function)
-        self.button_openDB.clicked.connect(self.test_function)
-
+        self.button_saveDB.clicked.connect(self.handle_button_save)
+        self.button_changeLocation.clicked.connect(self.handle_button_change_location)
+        self.button_openDB.clicked.connect(self.handle_button_open_db)
 
         # deal with treeview signals
         for treeview_key in self.treeViews_classes_in_term:
@@ -156,14 +149,11 @@ class Window(QMainWindow, Ui_MainWindow):
         :return:
         """
 
-        print("here")
-        tab_clss = self.tabWidget.currentWidget()
-        treeView_clss: QTreeWidget = tab_clss.findChild(QTreeWidget)
-        selected_items = treeView_clss.selectedItems()
-        if len(selected_items) == 0:
+        b_items_selected, items_selected = self.treeview_items_selected()
+        if b_items_selected:
+            self.enable_buttons(items_selected)
+        else:
             self.disable_buttons()
-        if len(selected_items) > 0:
-            self.enable_buttons(selected_items)
 
     @QtCore.pyqtSlot(QTreeWidgetItem, int)
 
@@ -210,6 +200,67 @@ class Window(QMainWindow, Ui_MainWindow):
             class_name = el.data(0,0)
             print(class_name, year, term)
             class_obj = self.ov.get_class(class_name, year, term)
+            self.ov.delete_class(class_obj)
+
+    def handle_button_add(self):
+        """
+        Open new prompt (alert thingy) to get data from user and initialize new class
+        :return:
+        """
+
+        # TODO open new prompt to get the required data
+        name = ""
+        year = 0
+        term = ""
+        self.ov.add_class(name, term, year)
+
+    def handle_button_save(self):
+        """
+        Saves the DB to disk
+        :return:
+        """
+
+        self.ov.store_to_db()
+
+
+    def handle_button_open_db(self):
+        """
+        Handles button click change DB. Load classes, exam data, ...
+        :return:
+        """
+
+        # todo folder pciker from os library
+        path = ""
+        self.ov.change_location(path)
+
+
+    def handle_button_change_location(self):
+        """
+        Handler for "change location". Stores entire DB to new location / folder
+        :return:
+        """
+        raise NotImplementedError
+
+    def treeview_items_selected(self):
+        """
+
+        :return: True, list of selected items iff at least 1 item is selected in treeview
+        """
+        tab_clss = self.tabWidget.currentWidget()
+        treeView_clss: QTreeWidget = tab_clss.findChild(QTreeWidget)
+        selected_items = treeView_clss.selectedItems()
+        if len(selected_items) <= 0:
+            return False, selected_items
+        else:
+            return True, selected_items
+
+    def treevie_one_item_selected(self):
+        """
+
+        :return: True iff exatly 1 item is selected in treeview
+        """
+        at_least_one, selected_items = self.treeview_items_selected()
+        return  at_least_one and len(selected_items) == 1
 
 
     def enable_buttons(self, selected_items):
@@ -220,7 +271,6 @@ class Window(QMainWindow, Ui_MainWindow):
         for but in self.selectable_buttons:
             # special case for details: only one class detail should be allowed to be opened, not multiple.
             if but == self.button_details:
-                print("here2")
                 if len(selected_items) != 1:
                     but.setDisabled(True)
                     continue
@@ -248,59 +298,24 @@ class Window(QMainWindow, Ui_MainWindow):
         self.window_classDetail.show()
 
 
-
-
     def populate_treeview(self):
-        # self.treeView
-        exams = ["orale 1", "orale 2", "grammaire"]
-        students = ["Peter", "Hans", "Frieda"]
-        grades = {}
-        grades["orale 1"] = {"Peter": 4.5, "Hans": 5.3, "Frieda": 4.2}
-        grades["orale 2"] = {"Peter": 3.5, "Hans": 4.7, "Frieda": 5.6}
-        grades["grammaire"] = {"Peter": 5.5, "Hans": 4.3, "Frieda": 5}
-
-        self.treeView.setColumnCount(1 + len(grades))
-        self.treeView.setHeaderLabels(["Students"] + list(grades.keys()))
-        items = []
-        for student in students:
-            # get layout [student, grade 1, grade 2, grade 3, ...]
-            list_tmp = [student]
-            for exam in grades:
-                list_tmp.append(str((grades[exam])[student]))
-            item = QTreeWidgetItem(list_tmp)
-            items.append(item)
-        self.treeView.insertTopLevelItems(0, items)
-        return
 
         # Old code form online example, is example of hierarchical structure
-        # data = {"Project A": ["file_a.py", "file_a.txt", "something.xls"],
-        #         "Project B": ["file_b.csv", "photo.jpg"],
-        #         "Project C": []}
-        # self.treeView.setColumnCount(2)
-        # self.treeView.setHeaderLabels(["Name", "Type"])
-        # items = []
-        # for key, values in data.items():
-        #     item = QTreeWidgetItem([key])
-        #     for value in values:
-        #         ext = value.split(".")[-1].upper()
-        #         child = QTreeWidgetItem([value, ext])
-        #         item.addChild(child)
-        #     items.append(item)
-        #
-        # self.treeView.insertTopLevelItems(0, items)
+        data = {"Project A": ["file_a.py", "file_a.txt", "something.xls"],
+                "Project B": ["file_b.csv", "photo.jpg"],
+                "Project C": []}
+        self.treeView.setColumnCount(2)
+        self.treeView.setHeaderLabels(["Name", "Type"])
+        items = []
+        for key, values in data.items():
+            item = QTreeWidgetItem([key])
+            for value in values:
+                ext = value.split(".")[-1].upper()
+                child = QTreeWidgetItem([value, ext])
+                item.addChild(child)
+            items.append(item)
 
-    def some_action2(self):
-        print("hello world")
-
-    def connectSignalsSlots(self):
-
-        self.button1.clicked.connect(self.some_action2)
-        self.action_Some_option2.triggered.connect(self.some_action2)
-
-    #
-    #     self.action_Find_Replace.triggered.connect(self.findAndReplace)
-    #
-    #     self.action_About.triggered.connect(self.about)
+        self.treeView.insertTopLevelItems(0, items)
 
 
     def about(self):

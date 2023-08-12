@@ -46,6 +46,29 @@ class Overview:
         self.folderpath = FOLDERPATH
         self.terms = []
 
+    def change_location(self, path):
+        """
+        Change base location folder path
+        :return:
+        """
+        self.folderpath = path
+        # TODO do also for all stored classes (change their base folder)
+
+    def store_to_db(self):
+        """
+        Store config and DB
+        :return:
+        """
+
+        # TODO store config files, see TODO
+
+        for class_obj in self.classes:
+            class_obj.store_exams()
+            class_obj.store_to_database()
+
+
+
+
     def get_class(self, name, year, term):
         for class_obj in self.classes:
             if class_obj.name.lower() == name.lower() and class_obj.year == int(year) and class_obj.term.lower() == term.lower():
@@ -89,6 +112,36 @@ class Overview:
         else:
             return term_years[-num_semester:]
 
+    def delete_class(self, class_obj: Class):
+        """
+        Delete the class object, including all data!
+        :param class_obj:
+        :return:
+        """
+        if class_obj in self.classes:
+            self.classes.remove(class_obj)
+        else:
+            raise RuntimeError(f"Class {class_obj} is not stored in overview!")
+        # TODO check what the delete_class function does
+        # class_obj.delete_class()
+        raise NotImplementedError
+
+    def add_class(self, name, term, year, students = None):
+        """
+        Add a class object to the overview
+        :param name: class name (e.g. 6a)
+        :param term:
+        :param year:
+        :return:
+        """
+        class_obj = Class(name, term, year)
+        if not students is None:
+            try:
+                class_obj.initialize_new_class(students)
+            except:
+                # TODO find way to deal with error, don't accept user input or so
+                print("some error here")
+        self.classes.append(class_obj)
 
     def load_categories_and_exams(self, class_obj: Class, path_folder_exams: str = None):
         """
