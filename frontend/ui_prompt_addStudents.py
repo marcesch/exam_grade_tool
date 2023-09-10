@@ -1,4 +1,4 @@
-# Form implementation generated from reading ui file 'prompt_addStudents.ui'
+# Form implementation generated from reading ui file 'ui/ui_prompt_addStudents.ui'
 #
 # Created by: PyQt6 UI code generator 6.5.2
 #

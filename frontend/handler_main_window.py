@@ -1,4 +1,5 @@
 import logging
+import random
 import sys, os
 
 from PyQt6 import QtGui, QtCore
@@ -7,10 +8,10 @@ from PyQt6.QtWidgets import (
     QTreeWidget, QHeaderView, QAbstractItemView
 )
 
-from PyQt6.uic import loadUi
-
+from backend.classes import Class
+from frontend.handler_window_exam_detail import WindowExamDetail
+from ui_main_window import Ui_MainWindow
 from frontend.handler_window_class_detail import WindowClassDetail
-from main_window import Ui_MainWindow
 from backend.overview import Overview
 
 
@@ -32,9 +33,6 @@ class Window(QMainWindow, Ui_MainWindow):
         # those buttons will be (dis)selected, based on whether a class is selected or not
         self.selectable_buttons = [self.button_details, self.button_deleteClass]
 
-        # self.populate_treeview()
-        # self.connectSignalsSlots()
-
     def startup(self):
         """
         Here, I can handle the startup thingies, like loading config (stored on some predetermined location:
@@ -47,11 +45,17 @@ class Window(QMainWindow, Ui_MainWindow):
         """
 
         working_directory = os.path.join(os.path.expanduser('~'), "grades_students/", "klassen/")
-        print(working_directory)
+        print(f"[MAIN] looking for classes in {working_directory}")
 
         self.ov = Overview()
         self.ov.folderpath = working_directory
         self.ov.load_classes()
+
+
+        no_classes_found = (len(self.ov.classes) == 0)
+        if no_classes_found:
+            # TODO add prompt "No classes found -> look elsewhere or create new"
+            print(f"No classes found in {working_directory}")
 
         # TODO load exams for each class (broken as of now)
         # for class_obj in self.ov.classes:
@@ -70,12 +74,11 @@ class Window(QMainWindow, Ui_MainWindow):
         Also populate treeview with found classes
         :return:
         """
-        # self.populate_treeview()
 
-        # remove the second tab -- cannot do that in QT designer (could also alter the main_window.py file, but that gets overwritten with every change in qt designer)
+        # remove the second tab -- cannot do that in QT designer (could also alter the ui_main_window.py file, but that gets overwritten with every change in qt designer)
         self.tabWidget.removeTab(1)
 
-        # To handle no semester found, I can use a "default tab" that I add in main_window.py and remove this tab with         self.tabWidget.removeTab(0)
+        # To handle no semester found, I can use a "default tab" that I add in ui_main_window.py and remove this tab with         self.tabWidget.removeTab(0)
         # add tabs:
         # self.tab_2 = QtWidgets.QWidget()
         # self.tab_2.setObjectName("tab_2")
@@ -118,6 +121,10 @@ class Window(QMainWindow, Ui_MainWindow):
 
 
     def test_function(self):
+        """
+        Test slot function
+        :return:
+        """
         raise NotImplementedError
 
     def connect_signals(self):
@@ -139,9 +146,7 @@ class Window(QMainWindow, Ui_MainWindow):
         for treeview_key in self.treeViews_classes_in_term:
             treeview: QTreeWidget = self.treeViews_classes_in_term[treeview_key]
             treeview.itemSelectionChanged.connect(self.handle_treeview_selection_change)
-
             treeview.itemDoubleClicked.connect(self.handle_treeview_doubleclick)
-
 
     def handle_treeview_selection_change(self):
         """
@@ -167,7 +172,6 @@ class Window(QMainWindow, Ui_MainWindow):
 
         class_name = item.text(0)
         year, term = self.get_current_term_year()
-        print(self.ov.classes)
         selected_class  = self.ov.get_class(class_name, year, term)
         self.show_class_details(selected_class)
 
@@ -301,6 +305,8 @@ class Window(QMainWindow, Ui_MainWindow):
     def populate_treeview(self):
 
         # Old code form online example, is example of hierarchical structure
+        raise NotImplementedError
+
         data = {"Project A": ["file_a.py", "file_a.txt", "something.xls"],
                 "Project B": ["file_b.csv", "photo.jpg"],
                 "Project C": []}
@@ -317,27 +323,6 @@ class Window(QMainWindow, Ui_MainWindow):
 
         self.treeView.insertTopLevelItems(0, items)
 
-
-    def about(self):
-
-        QMessageBox.about(
-
-            self,
-
-            "About Sample Editor",
-
-            "<p>A sample text editor app built with:</p>"
-
-            "<p>- PyQt</p>"
-
-            "<p>- Qt Designer</p>"
-
-            "<p>- Python</p>",
-
-        )
-
-    ### HELPER FUNCTIONS
-
     def get_current_term_year(self):
         """
         based on currently selected tab, return year / term
@@ -350,12 +335,9 @@ class Window(QMainWindow, Ui_MainWindow):
 
         return year, term.lower()
 
-
-
-
 def main():
 
-
+    print(f"[MAIN] Starting application...")
     app = QApplication(sys.argv)
 
     win = Window()
@@ -365,5 +347,55 @@ def main():
     sys.exit(app.exec())
 
 # TODO proper calling from cli.py or so, don't hardcode the main function caller
-main()
 
+# DEBUG CODE
+debug_class = Class(name="1a", year=2020, term="HS")
+debug_students = [
+    {"firstname": "Hans", "lastname": "Wurst"},
+    {"firstname": "Joerg", "lastname": "Salat"},
+    {"firstname": "Name", "lastname": "Pasta"},
+    {"firstname": "None", "lastname": "Nudeln"}
+]
+debug_class.initialize_new_class(debug_students)
+debug_class.add_exam("ex1", "cat1", 30)
+debug_class.add_exam("ex2", "cat1", 30)
+debug_class.add_exam("ex3", "cat1", 30)
+debug_class.add_exam("ex11", "cat2", 30)
+debug_class.add_exam("ex12", "cat2", 30)
+debug_class.add_exam("ex13", "cat2", 30)
+debug_class.add_exam("ex14", "cat2", 30)
+debug_class.add_exam("ex21", "cat3", 30)
+debug_class.add_exam("ex22", "cat3", 30)
+debug_class.add_exam("ex23", "cat3", 30)
+debug_class.add_exam("ex24", "cat3", 30)
+debug_class.add_exam("ex25", "cat3", 30)
+debug_class.add_exam("ex26", "cat3", 30)
+
+exams = []
+for cat in debug_class.categories:
+    exams += cat.exams
+debug_class.exams = exams
+
+def debug_window_exam_detail():
+    app = QApplication(sys.argv)
+    example_exams = debug_class.exams[0]
+    example_points = {}
+    for student in debug_class.students:
+        example_points[student] = random.randint(15,30)
+    example_exams.add_points(example_points)
+    win = WindowExamDetail(example_exams)
+    win.show()
+
+    sys.exit(app.exec())
+
+
+def debug_window_class_detail():
+    app = QApplication(sys.argv)
+    win = WindowClassDetail(debug_class)
+    win.show()
+
+    sys.exit(app.exec())
+
+# main()
+# debug_window_class_detail()
+debug_window_exam_detail()

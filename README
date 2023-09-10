@@ -44,6 +44,44 @@ https://codereview.stackexchange.com/questions/263273/python-pyqt6-populate-qtre
 2. Compile a .py file generating the GUI with `pyuic6 -o main_window.py main_window.ui`
 3. Connect signals, fill treeviews, ...
 
+#### Treeview selection
+```
+import sys
+from PyQt5.QtWidgets import QApplication, QTreeWidget, QTreeWidgetItem, QMainWindow
+from PyQt5.QtCore import Qt
+
+class CustomTreeWidget(QTreeWidget):
+    def __init__(self):
+        super().__init__()
+        self.setSelectionMode(QTreeWidget.MultiSelection)
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Shift or event.key() == Qt.Key_Control:
+            # Allow multiple item selection when Shift or Ctrl is pressed
+            event.accept()
+        elif event.key() == Qt.Key_Escape:
+            # Clear all selections when Esc is pressed
+            self.clearSelection()
+            event.accept()
+        else:
+            # Handle other key events normally
+            super().keyPressEvent(event)
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    window = QMainWindow()
+
+    tree = CustomTreeWidget()
+    tree.setHeaderLabels(['Item'])
+    for i in range(10):
+        item = QTreeWidgetItem(tree, ['Item {}'.format(i + 1)])
+
+    window.setCentralWidget(tree)
+    window.show()
+
+    sys.exit(app.exec_())
+```
+
 ### Distribution
 Try pyinstaller
 - [mac] https://www.pythonguis.com/tutorials/packaging-pyqt5-applications-pyinstaller-macos-dmg/

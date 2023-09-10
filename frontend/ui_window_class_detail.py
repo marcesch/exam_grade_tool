@@ -1,4 +1,4 @@
-# Form implementation generated from reading ui file 'window_class_detail.ui'
+# Form implementation generated from reading ui file 'ui/ui_window_class_detail.ui'
 #
 # Created by: PyQt6 UI code generator 6.5.2
 #
@@ -117,7 +117,7 @@ class Ui_WindowClassDetail(object):
         spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Expanding)
         self.verticalLayout_6.addItem(spacerItem)
         self.button_generateClassReport = QtWidgets.QPushButton(parent=self.centralwidget)
-        self.button_generateClassReport.setEnabled(False)
+        self.button_generateClassReport.setEnabled(True)
         self.button_generateClassReport.setObjectName("button_generateClassReport")
         self.verticalLayout_6.addWidget(self.button_generateClassReport)
         self.button_deleteClass = QtWidgets.QPushButton(parent=self.centralwidget)
@@ -182,7 +182,7 @@ class Ui_WindowClassDetail(object):
         self.button_detailsCategory.setText(_translate("WindowClassDetail", "Details"))
         self.button_addCategory.setText(_translate("WindowClassDetail", "Add Category"))
         self.button_deleteCategory.setText(_translate("WindowClassDetail", "Delete Category"))
-        self.button_generateClassReport.setText(_translate("WindowClassDetail", "Generate Semester Report"))
+        self.button_generateClassReport.setText(_translate("WindowClassDetail", "Export Excel Overview"))
         self.button_deleteClass.setText(_translate("WindowClassDetail", "Delete Class"))
         self.menuFile.setTitle(_translate("WindowClassDetail", "File"))
         self.menuEdit.setTitle(_translate("WindowClassDetail", "Edit"))

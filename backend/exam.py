@@ -14,10 +14,12 @@ TODO exam modes:
 - voluntary / make way to "delete" exam
 - absolut bonus (e.g. +0.25 or so)
 
+=> need to rewrite this, mostly (e.g., computing grade with linear vs. fixed points vs. ... requires inheritance, since different method signatures are required)
+
 """
 
 class Exam:
-    def __init__(self, name: str, term: str, classname: str, category: str, max_points: int, points: dict[Student, int] = None, points_needed_for_6: int = None,
+    def __init__(self, name: str, term: str, classname: str, category: str, max_points: int, points: dict[Student, int] = {}, points_needed_for_6: int = None,
                  min_grade: int = 1, max_grade=6, grades: dict[Student, float] = None, grade_computation="linear"):
         self.name = name
         # term = hs23 etc.
@@ -31,7 +33,7 @@ class Exam:
         self.min_grade = min_grade
         self.max_grade = max_grade
         self.points = {}
-        if self.points != None:
+        if self.points != {}:
             self.points = points
         self.computation_strategy = grade_computation
         self.computation_strategies = ["linear"]
@@ -55,6 +57,14 @@ class Exam:
 
     def __repr__(self):
         return f"E-{self.name}-{self.term}"
+
+    def number_participants(self):
+        """
+
+        :return: The number of students that have written this exam
+        """
+        raise NotImplementedError
+
 
     def rename(self, new_name: str):
         """
@@ -147,10 +157,15 @@ class Exam:
         :return:
         """
 
+        if points is None or len(points) == 0:
+            raise RuntimeError(f"Received points dictionary is none or empty")
+
         for student in points:
-            if student in self.points:
-                if points[student] != self.points[student]:
-                    logging.warning(f"Overwriting old grade {self.points[student]} for {student}")
+            # check if grades will be overwritten
+            if self.points is not None:
+                if student in self.points:
+                    if points[student] != self.points[student]:
+                        logging.warning(f"Overwriting old grade {self.points[student]} for {student}")
             self.points[student] = points[student]
 
         self.compute_grades()

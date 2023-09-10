@@ -32,6 +32,8 @@ class Class:
     def __init__(self, name: str, term: str, year: int):
         self.students: list[Student] = []
         self.categories: list[Category] = []
+        # TODO do changes consistently s.t. list of exams is kept
+        self.exams = []
         self.name: str = name
         if (term.lower() == "hs"):
             self.term: str = term.upper()
@@ -87,6 +89,39 @@ class Class:
         return self.term == other.term and self.year == other.year and self.name == other.name
 
     # TODO maybe add other comparisons, check again if that makes sense.
+
+    def number_exams_in_category(self, cat: Category):
+        """
+        Returns the number of exams that match the category
+        :param cat:
+        :return:
+        """
+        raise NotImplementedError
+
+    def change_category_of_exam(self, exam: Exam, cat: Category):
+        """
+        Sets another category for the exam
+        :param exam: exam whose cateogry should be changed
+        :param cat: new category for the exam
+        :return:
+        """
+        raise NotImplementedError
+
+
+    def compute_average_grade(self, student: Student):
+        """
+        Computes average grade of student across all exams
+        :param student:
+        :return:
+        """
+        raise NotImplementedError
+
+    def compute_average_grades(self):
+        """
+        Computes average grades of all students
+        :return:
+        """
+        raise NotImplementedError
 
     def update_name(self, new_name: str):
         self.name = new_name
@@ -150,6 +185,7 @@ class Class:
 
 
     def store_to_database(self):
+        # TODO replace -- use an export function instead.
         """
         Stores the old class file to the trash-folder and stores an updated version
         :return:
@@ -200,6 +236,25 @@ class Class:
             for student in self.students:
                 writer.writerow([student.lastname, student.firstname])
 
+    def number_exams_taken(self, student: Student):
+        """
+
+        :param student: Student from class
+        :return: Int (number of exams that this student has written)
+        """
+
+        raise NotImplementedError
+
+    def average_grade(self, student: Student):
+        """
+
+        :param student:
+        :return: Returns current average grade of student
+        """
+
+        raise NotImplementedError
+
+
     def get_student(self, first: str, last: str):
         """
         Really just a wrapper function for contains_student
@@ -209,6 +264,21 @@ class Class:
         """
         _, student = self.contains_student(first, last, return_student=True)
         return student
+
+    def get_category(self, category_name: str):
+        """
+        Get category object corresponding to category_name
+        :param category_name:
+        :return:
+        """
+
+        for cat in self.categories:
+            if cat.name == category_name:
+                return cat
+
+        # If not matching name was found at this time, exception
+        raise RuntimeError(f"No category {category_name} found in my list: \n {self.categories}")
+
 
     def contains_student(self, first: str, last: str, return_student=False):
         """
@@ -243,7 +313,7 @@ class Class:
     def initialize_new_class(self, students: list[dict[str, str]]):
         """
         creates new class from scratch and stores the data of the students as a csv.
-        :param
+        :param students: list [("firstname": __, "lastname": ___)]
         :return:
         """
         # TODO error checking, throw runtime error
@@ -285,6 +355,8 @@ class Class:
                 # if the item is a directory, recursively delete it and all its contents
                 shutil.rmtree(item_path)
 
+
+
     def empty_trash(self):
         """
         removes everything from the trash folder, raising tons of warnings
@@ -323,7 +395,29 @@ class Class:
         if student in self.students:
             self.students.remove(student)
         else:
-            raise RuntimeError(f"Could not find student {student} in class {self.name} {self.term}{self.year}")
+            raise RuntimeError(f"Could not find student {student} in class {self}")
+
+    def delete_exam(self, exam: Exam):
+        """
+        Deletion based on object reference instead of name. Replace other funciton usages with delete instead of remove
+        :param exam:
+        :return:
+        """
+        if exam in self.exams:
+            self.exams.remove(exam)
+        else:
+            raise RuntimeError(f"Could not find exam {exam} in class {self}")
+
+    def delete_category(self, category: Category):
+        """
+        Deletion based on object reference instead of name. Replace other funciton usages with delete instead of remove
+        :param category: Category to be deleted
+        :return:
+        """
+        if category in self.categories:
+            self.categories.remove(category)
+        else:
+            raise RuntimeError(f"Could not find category {category} in the list {self.categories}")
 
     def remove_student(self, first: str, last: str):
         """
@@ -477,6 +571,8 @@ class Class:
 
         # TODO sanitize user inputs
         # TODO make sure that exam names are unique
+
+        # TODO use an exam object here instead of the other whacky shit. Also, use subclasses to deal with different grading strategies
 
         # check if category is present:
         category = None
@@ -655,14 +751,7 @@ class Class:
 
         raise RuntimeError(f"Could not find exam {exam_name} in list {self.fetch_exams()}")
 
-    def delete_exam(self, exam: Exam):
-        """
-        Deletes exam from this class
-        :param exam:
-        :return:
-        """
-        # TODO checks etc.
-        raise NotImplementedError
+
 
     def create_grade_report(self, output_location: str = None, output_name: str = None,  output_type = "xlsx"):
         """

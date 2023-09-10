@@ -2,28 +2,28 @@ import logging
 import sys
 
 from PyQt6 import QtCore
-from PyQt6.QtWidgets import QMainWindow, QApplication
+from PyQt6.QtWidgets import QMainWindow, QApplication, QTreeWidget, QHeaderView, QTreeWidgetItem, QAbstractItemView
 
+from backend.category import Category
 from backend.classes import Class
+from backend.student import Student
 from frontend.handler_window_exam_detail import WindowExamDetail
-from window_class_detail import  Ui_WindowClassDetail
+from ui_window_class_detail import  Ui_WindowClassDetail
 
 # TODO maybe change QMainWindow -> QApplicationWindow
 class WindowClassDetail(QMainWindow, Ui_WindowClassDetail):
 
     def __init__(self, class_obj, parent=None):
 
-        # TODO alter things here
-
+        self.DEBUG = True
         # initialize all GUI elements based on information from .ui file (compiled to python using pyuic6)
         super().__init__(parent)
 
         self.setupUi(self)
-
-
-
         self.class_obj = class_obj
-        print(class_obj)
+        if self.DEBUG:
+            print(f"[CLASS DETAIL] Showing class details for {class_obj}")
+            print(f"[CLASS DETAIL] Registered students {class_obj.students}")
         self.window().setWindowTitle(f"Class {self.class_obj.name} {self.class_obj.term.upper()} {self.class_obj.year}")
 
         # windows that can be opened from this view
@@ -34,14 +34,83 @@ class WindowClassDetail(QMainWindow, Ui_WindowClassDetail):
         self.prompt_add_students_now = None
         self.prompt_add_student_details = None
 
+        # gui functions that take care of displaying stuff
+        self.populate_treeviews()
+
+        # take care of signals
+        self.connect_signals()
 
 
-    def test_function(self):
+    def populate_treeviews(self):
         """
-        Used to connect actions etc.
+        Fills the treeviews with data
         :return:
         """
-        raise NotImplementedError
+
+        # set treeview properties
+        for treeview in [self.treeview_students, self.treeview_exams, self.treeview_categories]:
+            treeview.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
+
+            # dynamically adjust width of headers
+            header = treeview.header()
+            header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+            header.setStretchLastSection(True)
+
+
+
+        # fill with contents
+        self.treeview_students.setColumnCount(3) # first, last, average grade
+        self.treeview_exams.setColumnCount((3)) # name, category, number of students that have written exam
+        self.treeview_categories.setColumnCount(4) # name, number of exams, weight, strategy
+
+        self.treeview_students.setHeaderLabels([f"Lastname", f"Firstname", f"Average Grade"])
+        self.treeview_exams.setHeaderLabels([f"Exam Name", f"Number of participants", f"Category"])
+        self.treeview_categories.setHeaderLabels(([f"Category Name", f"Weight", f"Mode", f"Number of exams"]))
+
+        # TODO use real functions once they are implemented
+        # self.treeview_students.insertTopLevelItems(0, [QTreeWidgetItem([stud.firstname, stud.lastname, str(self.class_obj.number_exams_taken(stud)), str(self.class_obj.average_grade(stud))]) for stud in self.class_obj.students])
+        self.treeview_students.insertTopLevelItems(0, [QTreeWidgetItem([stud.lastname, stud.firstname, str(4)]) for stud in self.class_obj.students])
+        # TODO keep exams in list, not in categories
+        # self.treeview_exams.insertTopLevelItems(0, [QTreeWidgetItem([exam.name, exam.category, exam.number_participants()]) for exam in self.class_obj.exams])
+        self.treeview_exams.insertTopLevelItems(0, [QTreeWidgetItem([exam.name, str(0), exam.category]) for exam in self.class_obj.exams])
+        # self.treeview_categories.insertTopLevelItems(0, [QTreeWidgetItem([cat.name, str(cat.weight), cat.grading_type, self.class_obj.number_exams_in_category(cat)]) for cat in self.class_obj.categories])
+        self.treeview_categories.insertTopLevelItems(0, [QTreeWidgetItem([cat.name, str(cat.weight), cat.grading_type, str(1)]) for cat in self.class_obj.categories])
+
+    def update_treeviews(self):
+        """
+        Updates all treeviews after alteration (addition / deletion / ...)
+        :return:
+        """
+        self.update_treeview_student()
+        self.update_treeview_exam()
+        self.update_treeview_category()
+
+    def update_treeview_student(self):
+        """
+        Update student treeview after alteration (addition / deletion / ...)
+        :return:
+        """
+        self.treeview_students.clear()
+        self.treeview_students.insertTopLevelItems(0, [QTreeWidgetItem([stud.lastname, stud.firstname, str(4)]) for stud in self.class_obj.students])
+
+
+    def update_treeview_exam(self):
+        """
+        Update student treeview after alteration (addition / deletion / ...)
+        :return:
+        """
+        self.treeview_exams.clear()
+        self.treeview_exams.insertTopLevelItems(0, [QTreeWidgetItem([exam.name, str(0), exam.category]) for exam in self.class_obj.exams])
+
+
+    def update_treeview_category(self):
+        """
+        Update student treeview after alteration (addition / deletion / ...)
+        :return:
+        """
+        self.treeview_categories.clear()
+        self.treeview_categories.insertTopLevelItems(0, [QTreeWidgetItem([cat.name, str(cat.weight), cat.grading_type, str(1)]) for cat in self.class_obj.categories])
+
 
     def connect_signals(self):
         """
@@ -51,45 +120,98 @@ class WindowClassDetail(QMainWindow, Ui_WindowClassDetail):
         :return:
         """
 
-        self.button_studentDetails.clicked.connect(self.test_function)
-        self.button_addStudents.clicked.connect(self.test_function)
-        self.button_removeStudent.clicked.connect(self.test_function)
-        self.button_examDetails.clicked.connect(self.test_function)
-        self.button_addExam.clicked.connect(self.test_function)
-        self.button_generateExamReport.clicked.connect(self.test_function)
-        self.button_deleteExam.clicked.connect(self.test_function)
-        self.button_detailsCategory.clicked.connect(self.test_function)
-        self.button_addCategory.clicked.connect(self.test_function)
-        self.button_deleteCategory.clicked.connect(self.test_function)
-        self.button_generateClassReport.clicked.connect(self.test_function)
-        self.button_deleteClass.clicked.connect(self.test_function)
+        self.button_studentDetails.clicked.connect(self.handle_button_details_student)
+        self.button_addStudents.clicked.connect(self.handle_button_add_students)
+        self.button_removeStudent.clicked.connect(self.handle_button_remove_student)
+        self.button_examDetails.clicked.connect(self.handle_button_details_exam)
+        self.button_addExam.clicked.connect(self.handle_button_add_exam)
+        self.button_generateExamReport.clicked.connect(self.handle_button_generate_exam_report)
+        self.button_deleteExam.clicked.connect(self.handle_button_delete_exam)
+        self.button_detailsCategory.clicked.connect(self.handle_button_details_category)
+        self.button_addCategory.clicked.connect(self.handle_button_add_category)
+        self.button_deleteCategory.clicked.connect(self.handle_button_delete_category)
+        self.button_generateClassReport.clicked.connect(self.handle_button_export_excel)
+        self.button_deleteClass.clicked.connect(self.handle_button_delete_class)
 
-        raise NotImplementedError
+        # deal with treeview signals
+        for treeview in [self.treeview_students, self.treeview_exams, self.treeview_categories]:
+            treeview.itemSelectionChanged.connect(self.update_enabled_buttons)
 
+        self.treeview_students.itemSelectionChanged.connect(self.update_enabled_buttons)
+
+        self.treeview_students.itemDoubleClicked.connect(self.handle_treeview_student_double)
+        self.treeview_exams.itemDoubleClicked.connect(self.handle_treeview_exam_double)
+        self.treeview_categories.itemDoubleClicked.connect(self.handle_treeview_cat_double)
+
+
+    def handle_treeview_student_double(self, item, col):
+        """
+        Handles double click on student item
+        :param item: item in treeview that was clicked
+        :param col: column where it was clicked
+        :return:
+        """
+
+        student_last, student_first = item.text(0), item.text(1)
+        student_obj = self.class_obj.get_student(student_first, student_last)
+        self.show_prompt_student_details(student_obj)
+
+    def handle_treeview_exam_double(self, item, col):
+        """
+        Handles double click on exam item
+        :param item: item in treeview that was clicked
+        :param col: column where it was clicked
+        :return:
+        """
+
+        exam_name = item.text(0)
+        exam_obj = self.class_obj.get_exam(exam_name)
+        self.show_window_exam_detail(exam_obj)
+
+    def handle_treeview_cat_double(self, item, col):
+        """
+        Handles double click on category item
+        :param item: item in treeview that was clicked
+        :param col: column where it was clicked
+        :return:
+        """
+
+        category_name = item.text(0)
+        category_obj = self.class_obj.get_category(category_name)
+        self.show_prompt_category_details(category_obj)
 
     def number_students_selected(self):
         """
         :return: Number of students selected in treeview of students
         """
-        raise NotImplementedError
+
+        selected_student_rows = self.treeview_students.selectedItems()
+        return len(selected_student_rows)
 
     def number_exams_selected(self):
         """
         :return: Number of exams selected in exam treeview
         """
-        raise NotImplementedError
+
+        selected_exam_rows = self.treeview_exams.selectedItems()
+        return len(selected_exam_rows)
 
     def number_categories_selected(self):
         """
         :return: Number of categories selected in category treeview
         """
-        raise NotImplementedError
+
+        selected_cat_rows = self.treeview_categories.selectedItems()
+        return len(selected_cat_rows)
 
     def update_enabled_buttons(self):
         """
         Handles the enabling / disabling of buttons, based on number of items selected in the treeviews
         :return:
         """
+
+        if self.DEBUG:
+            print(f"[WINDOW CLASS DETAILS] Got here")
 
         single_elements_buttons_students = [self.button_studentDetails]
         single_elements_buttons_exams = [self.button_examDetails, self.button_generateExamReport]
@@ -142,7 +264,7 @@ class WindowClassDetail(QMainWindow, Ui_WindowClassDetail):
             else:
                 button.setDisabled(True)
 
-    def handle_button_student_details(self):
+    def handle_button_details_student(self):
         """
         Handles the click on student details
         :return:
@@ -178,17 +300,20 @@ class WindowClassDetail(QMainWindow, Ui_WindowClassDetail):
         selected_students = []
         for row in selected_rows:
             last = row.data(0,0)
-            first = row.data(0,0)
+            first = row.data(1,0)
             student = self.class_obj.get_student(first, last)
             if student is None:
-                raise RuntimeError(f"Could not find student {first} {last} in this class")
+                # TODO don't raise errors in GUI...
+                print(f"[ERROR] Could not find student {first} {last} in this class")
             selected_students.append(student)
         confirmation = self.show_deletion_warning("student")
         if confirmation:
             for student in selected_students:
                 self.class_obj.delete_student(student)
+                # update treeview to remove the deleted item
+                self.update_treeview_student()
 
-    def handle_button_exam_details(self):
+    def handle_button_details_exam(self):
         """
        Handles the click on exam details
        :return:
@@ -202,7 +327,7 @@ class WindowClassDetail(QMainWindow, Ui_WindowClassDetail):
             exam = self.class_obj.get_exam(exam_name)
             self.show_window_exam_detail(exam)
         except Exception as e:
-            raise RuntimeError(f"Got exception on buttonpress exam details: \n{e}")
+            print(f"[ERROR] Got exception on buttonpress exam details: \n{e}")
 
     def handle_button_add_exam(self):
         """
@@ -234,7 +359,7 @@ class WindowClassDetail(QMainWindow, Ui_WindowClassDetail):
         """
         selected_rows = self.treeview_exams.selectedItems()
         if len(selected_rows) <= 0:
-            raise RuntimeError(f"Empty selection of exams to be deleted")
+            print(f"[ERROR] Empty selection of exams to be deleted")
 
         confirmation = self.show_deletion_warning("exam")
         if not confirmation:
@@ -251,23 +376,71 @@ class WindowClassDetail(QMainWindow, Ui_WindowClassDetail):
         if len(selected_exams) > 0:
             for exam in selected_exams:
                 self.class_obj.delete_exam(exam)
+            self.update_treeview_exam()
 
     def handle_button_details_category(self):
-        raise NotImplementedError
+        """
+        Handles button details category
+        :return:
+        """
+
+        selected_categories = self.treeview_categories.selectedItems()
+        if len(selected_categories) != 1:
+            print(f"[ERROR] Wrong number of categories selected")
+            return
+
+        selected_cat = selected_categories[0]
+        self.show_prompt_category_details(self.class_obj.get_category(selected_cat.data(0,0)))
 
     def handle_button_add_category(self):
-        raise NotImplementedError
+        """
+        Handles button add category
+        :return:
+        """
+        self.show_prompt_add_category()
+        # TODO maybe add stuff here
 
     def handle_button_delete_category(self):
-        raise NotImplementedError
+        """
+        Handles button Delete category
+        :return:
+        """
+        selected_rows = self.treeview_categories.selectedItems()
+        if len(selected_rows) <= 0:
+            print(f"[ERROR] Empty selection of categories to be deleted")
+            return
 
-    def handle_button_generate_class_report(self):
+        confirmation = self.show_deletion_warning("category")
+        if not confirmation:
+            return
+
+        selected_categories = []
+        for row in selected_rows:
+            cat_name = row.data(0,0)
+            try:
+                cat_obj = self.class_obj.get_category(cat_name)
+                selected_categories.append(cat_obj)
+            except:
+                logging.WARNING(f"Could not find cateogry {cat_name} in {self.class_obj.categories}")
+        if len(selected_categories) > 0:
+            for cat in selected_categories:
+                self.class_obj.delete_category(cat)
+            self.update_treeview_category()
+
+    def handle_button_export_excel(self):
         raise NotImplementedError
 
     def handle_button_delete_class(self):
+
+        confirmation = self.show_deletion_warning("class")
+        if not confirmation:
+            logging.info(f"User did not confirm deletion of class, skipping ...")
+            return
+
         raise NotImplementedError
 
     def show_prompt_add_category(self):
+
         raise NotImplementedError
 
     def show_prompt_add_exam(self):
@@ -279,7 +452,12 @@ class WindowClassDetail(QMainWindow, Ui_WindowClassDetail):
     def show_prompt_add_students_now(self):
         raise NotImplementedError
 
-    def show_prompt_student_details(self, student):
+    def show_prompt_student_details(self, student: Student):
+        raise NotImplementedError
+
+    def show_prompt_category_details(self, category: Category):
+        # TODO need to create the window prompt
+        print(f"Got to show_prompt_cat_details")
         raise NotImplementedError
 
     def show_window_exam_detail(self, exam):
@@ -293,24 +471,23 @@ class WindowClassDetail(QMainWindow, Ui_WindowClassDetail):
         """
         Shows warning "Are you sure you want to delete xyz
         :type: Used to distinguish what will be deleted (only GUI consequences)
-        :return: True iff user presses "accept
+        :return: True iff user presses "accept"
         """
 
         if type == "student":
-            print("Are you sure you want to delete student xyz")
+            print(f"Skipped check for student deletion")
+            return True
+        if type == "category":
+            print(f"Skipped check for category deletion")
+            return True
+        if type == "exam":
+            print(f"Skipped check for category deletion")
+            return True
+        if type == "class":
+            # TODO here I do need to show a prompt
+            return False
         return True
 
 
-# TODO remove debug code
-
-def main():
-    app = QApplication(sys.argv)
 
 
-    win = WindowClassDetail(Class(name="1a", year=2020, term="HS"))
-
-    win.show()
-
-    sys.exit(app.exec())
-
-main()

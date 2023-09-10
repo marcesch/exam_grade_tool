@@ -38,6 +38,10 @@ categorization:
 - [2] add checks on each gui-function call to catch any potential error.
 - [3] when adding new class, use categories from most recent class as template
 
+- [1] Replace Exam class by subclasses for different calculation types (linear, ...)
+- [1] Storing: Use Export to xlsx and store overview to json
+- [1] Restructure code: Categories don't have a list of exams, but instead a class has a list of exams
+
 
 
 ## FRONTEND / GUI
@@ -56,6 +60,10 @@ categorization:
 - [1] in klassenübersicht: schnitt und anzahl prüfung pro student in treeview anzeigen
 - [1] in exam: schnitt in treeview anzeigen
 - [1] kategorienübersicht rechts
+- [2] in treeview selection, make selection more convenient (esc removes any selected item, pressing outside of the treeview too, only allow multiselect when pressing shift, ...)
+- [3] dynamically adjust window size to avoid scrolling within treeviews
+- [2] how to deal with weight of categories not being 1 -- e.g., average grade by student does not make sense in treeview than
+- [2] Maybe exchange treeviews with tableviews
 
 
 ## DISTRIBUTION

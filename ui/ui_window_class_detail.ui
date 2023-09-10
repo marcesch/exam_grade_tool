@@ -222,10 +222,10 @@
             <item>
              <widget class="QPushButton" name="button_generateClassReport">
               <property name="enabled">
-               <bool>false</bool>
+               <bool>true</bool>
               </property>
               <property name="text">
-               <string>Generate Semester Report</string>
+               <string>Export Excel Overview</string>
               </property>
              </widget>
             </item>

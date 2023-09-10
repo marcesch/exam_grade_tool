@@ -46,13 +46,20 @@ class Overview:
         self.folderpath = FOLDERPATH
         self.terms = []
 
-    def change_location(self, path):
+    def open_other_db(self, path):
         """
-        Change base location folder path
+        Open other database (also change config)
         :return:
         """
         self.folderpath = path
         # TODO do also for all stored classes (change their base folder)
+
+    def change_db_location(self, path):
+        """
+        Stores DB at new location (moves all data, new location in config, ...)
+        :param path:
+        :return:
+        """
 
     def store_to_db(self):
         """
@@ -66,10 +73,15 @@ class Overview:
             class_obj.store_exams()
             class_obj.store_to_database()
 
-
-
-
     def get_class(self, name, year, term):
+        """
+        Returns the class object matching the name / year / term ID
+        :param name:
+        :param year:
+        :param term:
+        :return: class object
+        """
+
         for class_obj in self.classes:
             if class_obj.name.lower() == name.lower() and class_obj.year == int(year) and class_obj.term.lower() == term.lower():
                 return class_obj
@@ -92,7 +104,7 @@ class Overview:
         """
         Returns a list of the last num_semester many seen tuples <term>-<year>. E.g. returns [HS2020, FS2021] if num_semester is 2
         :param num_semester: Lenght of list to be returned
-        :return: list of term-year of newest classes in self.classes
+        :return: tuple (term,year) of newest classes in self.classes
         """
 
         def term_key(cls):
@@ -118,13 +130,16 @@ class Overview:
         :param class_obj:
         :return:
         """
+
+        # TODO delete from disk, ...
+        raise NotImplementedError
+
         if class_obj in self.classes:
             self.classes.remove(class_obj)
         else:
             raise RuntimeError(f"Class {class_obj} is not stored in overview!")
         # TODO check what the delete_class function does
         # class_obj.delete_class()
-        raise NotImplementedError
 
     def add_class(self, name, term, year, students = None):
         """
@@ -148,7 +163,8 @@ class Overview:
         :return:
         """
 
-        # TODO caller can take care of panic mode -- if this function returns an error, the caller invokes this function again with the backup-filepath
+        # TODO I think deprecated, discarding for now
+        raise NotImplementedError
 
         if path_folder_exams == None:
             dirpath = class_obj.filename_base_exam
@@ -255,45 +271,7 @@ class Overview:
 
             col_index += 2
 
-    # def load_class_data(self, path_classlist=None):
-    #     """
-    #     Loads the following fields from the file "klassen" -> [year]_[term]_[name].csv:
-    #     - year = [year]
-    #     - term = [term]
-    #     - name = [name]
-    #     - students from contents of file
-    #     => maybe don't load year, term, name from student -- they will be initialized when class is created anyway..let
-    #     the caller take care of that
-    #     :param filepath: can overwrite filepath / which folder should be taken into consideration for reading in the classlists
-    #     :return:
-    #     """
-    #     # TODO caller can take care of panic mode -- if this function returns an error, the caller invokes this function again with the backup-filepath
-    #
-    #     # TODO ensure that old classlists get moved to /archive or so, otherwise they always get loaded as active class
-    #
-    #     # TODO also load report id
-    #
-    #     if path_classlist == None:
-    #         dirpath = self.folderpath
-    #     else:
-    #         # TODO maybe include some checks on validity of path
-    #         dirpath = path_classlist
-    #
-    #     for file in os.listdir(dirpath):
-    #         if file.endswith(".csv"):
-    #             year, term, name = file[:-4].split("_")
-    #             class_obj = Class(name, term, int(year))
-    #             with open(os.path.join(dirpath, file), 'r') as f:
-    #                 lines = f.readlines()
-    #                 header = lines[0].strip().split(",")
-    #                 if header[0] != "Nachname" or header[1] != "Vorname":
-    #                     raise RuntimeWarning(
-    #                         "First row of CSV file should contain the strings 'Nachname' and 'Vorname'")
-    #                 for line in lines[1:]:
-    #                     lastname, firstname = line.strip().split(",")
-    #                     student = Student(firstname, lastname)
-    #                     class_obj.students.append(student)
-    #             self.classes.append(class_obj)
+
 
     def load_classes(self):
         """
@@ -301,6 +279,8 @@ class Overview:
         => how to deal with multiple intstances of classes? => mb load all of them, let user decide which to pick.
         :return:
         """
+
+        # TODO this will change with json pickle
 
         # Loop through all files in the directory
         print(f"Looking at {self.folderpath}")

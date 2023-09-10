@@ -1,4 +1,4 @@
-# Form implementation generated from reading ui file 'prompt_add_exam.ui'
+# Form implementation generated from reading ui file 'ui/ui_prompt_add_exam.ui'
 #
 # Created by: PyQt6 UI code generator 6.5.2
 #
