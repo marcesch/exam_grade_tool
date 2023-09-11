@@ -18,8 +18,10 @@ TODO exam modes:
 
 # TODO remove exams from category -- instead, exams are kept in class, with each exam being assigned a category
 
-class Category:
-    def __init__(self, name: str, term: str, classname: str, weight: float, grading_type: str = "default"):
+# TODO rewrite category also with subclasses -- each subclass contains aggregate_grades() based on respective fields
+
+class BaseCategory:
+    def __init__(self, name: str):
         """
 
         I use terms for correctness -- only exams
@@ -31,71 +33,24 @@ class Category:
 
         # e.g. redaction
         self.name = name
-        # e.g. hs23
-        self.term = term
-        # e.g. 4a
-        self.classname = classname
-        # self.id = f"{self.term}_{self.classname}_{self.name}"
-        # TODO this is only used for the exams themselves
-        self.term = term
-        self.weight = weight
-        self.grading_types = ["default"]
-        self.grading_type = grading_type
-        if self.grading_type not in self.grading_types:
-            logging.error("Unknown grading type. Using default instead")
-            self.grading_type = "default"
+
+
 
     def __str__(self):
-        return f"{self.name} {self.term}"
+        return f"{self.name}"
 
     def __repr__(self):
         return f"C-{self.name}"
 
-    def add_exam(self,
-                 exam_name: str,
-                 term: str,
-                 classname: str,
-                 max_points: int,
-                 points_needed_for_6: int = None,
-                 min_grade: int=1,
-                 max_grade=6,
-                 achieved_points= None,
-                 achieved_grades=None,
-                 computation_mode = "linear"):
+    def aggregate_grades(self, list_of_grades: list[dict[Student,float]]):
         """
-
-        :param exam:
+        Compute the resulting grade for this category from the given list
+        :param list_of_grades: list of exam data
         :return:
         """
 
-        raise NotImplementedError
+        # subclasses must implement this
 
-        if points_needed_for_6 is None:
-            points_needed_for_6 = max_points
-        exam = Exam(name=exam_name,
-                    term=term,
-                    classname=classname,
-                    category=self.name,
-                    max_points=max_points,
-                    points=achieved_points,
-                    points_needed_for_6=points_needed_for_6,
-                    min_grade=min_grade,
-                    max_grade=max_grade,
-                    grades=achieved_grades,
-                    grade_computation=computation_mode)
-        self.exams.append(exam)
-        return exam
-
-    def add_grades_for_exam(self):
-        """
-        updates / adds grades for one single exam
-        basically wrapper for caller
-        :return:
-        """
-        raise NotImplementedError
-
-    def update_grading_type(self):
-        raise NotImplementedError
 
     def aggregate_grades(self, student: Student, grades: list[dict[Student, float]]):
         """
@@ -131,3 +86,64 @@ class Category:
         else:
             raise NotImplementedError
 
+
+class CategoryDefault(BaseCategory):
+    def __init__(self, name:str, weight:float):
+        """
+        Subclass with weight fields for weight as well as computation_mode
+        :param name: E.g. Voci
+        :param weight: How much the category should weight in comparison to other categories
+        """
+        raise NotImplementedError
+
+    def aggregate_grades(self, list_of_grades: list[dict[Student,float]]):
+        """
+
+        :param list_of_grades:
+        :return:
+        """
+        raise NotImplementedError
+
+class CategoryWithDroppedGrades(CategoryDefault):
+    def __init__(self, name: str, weight: float, number_drop_grades: int=1):
+        """
+        Subclass to only count the best n-number_drop_grades of n exams (Streichnote, in Deutsch
+        :param name:
+        :param weight:
+        :param number_drop_grades:
+        """
+
+        self.number_drop_grades = number_drop_grades
+        super().__init__(name, weight)
+
+        raise NotImplementedError
+
+    def aggregate_grades(self, list_of_grades: list[dict[Student,float]]):
+        """
+
+        :param list_of_grades:
+        :return:
+        """
+
+        raise NotImplementedError
+
+class CategoryOnlyIfImproves(BaseCategory):
+    def __init__(self, name: str, weight: float):
+        """
+        Exam results from this category should only count if it improves the grade.
+        :param name:
+        :param weight:
+        """
+        raise NotImplementedError
+
+class CategoryBonus(BaseCategory):
+    # TODO might do that as an exam without a category
+    def __init__(self, bonus_weight, achieved_bonus: dict[Student, float]):
+        """
+        Subclass for categories that should not count towards weight, but instead be added absolutely. E.g. bonus grade of 0.25
+        :param bonus_weight: How much should the absolute bonus count towards the final grade
+        :param achieved_bonus: "Hardcode" the achieved bonus instead of creating a new exam
+        """
+        self.bonus_weight = bonus_weight
+        self.achieved_bonus = achieved_bonus
+        raise NotImplementedError

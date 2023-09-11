@@ -7,17 +7,7 @@ import matplotlib.pyplot as plt
 from backend.student import Student
 from backend.category import Category
 
-"""
-TODO exam modes:
-- best n-1 of n
-- normal
-- only if it improves grade
-- voluntary / make way to "delete" exam
-- absolut bonus (e.g. +0.25 or so)
 
-=> need to rewrite this, mostly (e.g., computing grade with linear vs. fixed points vs. ... requires inheritance, since different method signatures are required)
-
-"""
 
 class Exam:
     def __init__(self, name: str, term: str, classname: str, category: Category,
@@ -80,16 +70,18 @@ class Exam:
 
     def compute_single_grade(self, points):
         """
+        this function should be overwritten in subclasses
+        If the subclass does not implement this function, catch a call to the exam object and throw a runtime error
+
         :param points:
         :return:
         """
-
-        # TODO this function should be overwritten in subclasses
         raise NotImplementedError
 
     def compute_grades(self):
         """
         Computes the grades for all students, based on the compute_single_grade method implemented in subclass
+        might be overwritten by subclasses
         :return:
         """
 
@@ -119,13 +111,7 @@ class Exam:
         :return: -1 if grade was too low, 1 if grade was too high -- will be truncated in either case
         """
 
-        ret = 0
-        if grade < self.min_grade:
-            ret = -1
-            grade = self.min_grade
-        elif grade > self.max_grade:
-            ret = 1
-            grade = self.max_grade
+        grade, boundary_check_status = self.enforce_grade_boundaries(grade)
 
         if student not in self.grades.keys():
             logging.info(f"Student {student} not yet part of exam, adding them...")
@@ -133,7 +119,7 @@ class Exam:
         self.grades[student] = grade
 
         # let the caller know about out of bounds
-        return ret
+        return boundary_check_status
 
 
     def add_points(self, points: dict[Student, int]):
@@ -155,6 +141,23 @@ class Exam:
             self.points[student] = points[student]
 
         self.compute_grades()
+
+    def enforce_grade_boundaries(self, grade: float):
+        """
+        Performs boundary checks on grade
+        :param grade:
+        :return: cleaned_grade, status where status indicates whether grade was too high or too low
+        """
+
+        ret = 0
+        if grade < self.min_grade:
+            ret = -1
+            grade = self.min_grade
+        elif grade > self.max_grade:
+            ret = 1
+            grade = self.max_grade
+
+        return grade, ret
 
 
     def generate_summary_report(self, filename):
@@ -223,11 +226,8 @@ class ExamModeLinear(Exam):
         :param grades: manually overwrite computed grades with present grades
         """
 
-        if len(grades.keys() != 0):
-            # pass the grades argument
-            super().__init__(self, name, term, classname, category, min_grade, max_grade, grades)
-        else:
-            super().__init__(self, name, term, classname, category, min_grade, max_grade)
+
+        super().__init__(self, name, term, classname, category, min_grade, max_grade, grades)
 
         # define fields specifically for this class
         self.max_points = max_points
@@ -269,13 +269,7 @@ class ExamModeLinear(Exam):
         :return: -1 if grade was too low, 1 if grade was too high -- will be truncated in either case
         """
 
-        ret = 0
-        if grade < self.min_grade:
-            ret = -1
-            grade = self.min_grade
-        elif grade > self.max_grade:
-            ret = 1
-            grade = self.max_grade
+        grade, boundary_check_status = self.enforce_grade_boundaries(grade)
 
         if student not in self.points.keys():
             logging.info(f"Student {student} not yet part of exam, adding them...")
@@ -285,7 +279,7 @@ class ExamModeLinear(Exam):
         self.grades[student] = grade
 
         # let the caller know about out of bounds
-        return ret
+        return boundary_check_status
 
     def compute_grades(self):
         """
@@ -319,7 +313,8 @@ class ExamModeSetGradeManually(Exam):
 
 
 class ExamModeCurveLinearWithPassingPoints(ExamModeLinear):
-    def __init__(self, name: str,
+    def __init__(self,
+                 name: str,
                  term: str,
                  classname: str,
                  category: Category,
@@ -355,4 +350,106 @@ class ExamModeCurveLinearWithPassingPoints(ExamModeLinear):
         super().__init__(self, name, term, classname, category, max_points, points_for_max,
                  min_grade, max_grade, points, grades)
 
+        def compute_single_grade(self, points: float):
+            """
+            Computes grade based on 2 linear fits: from min to passing, from passing to max
+            :param self:
+            :param points:
+            :return:
+            """
 
+            if points > self.max_points:
+                logging.info(f"[EXAM] Received more points than maximally possible, truncating it...")
+                points = self.max_points
+
+            if points < 0:
+                raise RuntimeError(f"[EXAM] Can't compute grade for negative points")
+            elif points < self.points_for_pass:
+                return self.min_grade + (self.passing_grade - self.min_grade) * points / self.points_for_pass
+            elif points > self.points_for_pass:
+                return self.passing_grade + (self.max_grade - self.passing_grade) * points / self.points_needed_for_6
+            else:
+                raise RuntimeError(f"[EXAM] Unexpected error while computing grade for {points}")
+
+
+class ExamModeHeavyCurveFitting(Exam):
+    def __init__(self):
+        """
+        Use this mode to enforce a Gaussian curve fit, just for fun I guess
+        """
+        raise NotImplementedError
+
+class ExamModeFixedPointScheme(Exam):
+    def __init__(self,
+                name: str,
+                term: str,
+                classname: str,
+                category: Category,
+                mapping_points_grades: dict[float, float],
+                min_grade: float = 1,
+                max_grade: float = 6,
+                points: dict[Student, float] = {},
+                grades: dict[Student, float] = {}):
+        """
+        Allows to set a fixed point-to-grade mapping (with x points, you get grade y)
+        :param mapping_points_grades: dictionary with table point x gets grade y
+        :param points:
+        :param grades:
+        """
+
+        self.mapping_points_grades = mapping_points_grades
+        self.points = points
+
+        # make sure to keep the manually set grade over the one calculated by grades
+        for student in grades:
+            self.points[student] = -1
+
+
+        super().__init__(name, term, classname, category, min_grade, max_grade, grades)
+
+        raise NotImplementedError
+
+
+    def compute_single_grade(self, points):
+        """
+
+        :param points:
+        :return:
+        """
+
+        # get the next smaller key in dict and return the grade stored there
+        return self.mapping_points_grades[points] if points in self.mapping_points_grades else self.mapping_points_grades[min(self.mapping_points_grades.keys(), key=lambda k: (points - k) if k < points else 1000)]
+
+    def add_grade_manually(self, student: Student, grade: float):
+        """
+        Manually add grade (used to overwrite stuff). Callers job to ensure student is in class
+        :param student:
+        :param grade:
+        :return: -1 if grade was too low, 1 if grade was too high -- will be truncated in either case
+        """
+
+        grade, boundary_check_status = self.enforce_grade_boundaries(grade)
+
+        if student not in self.points.keys():
+            logging.info(f"Student {student} not yet part of exam, adding them...")
+
+        # mark that the student's grade was overwritten and should not be automatically computed
+        self.points[student] = -1
+        self.grades[student] = grade
+
+        # let the caller know about out of bounds
+        return boundary_check_status
+
+    def compute_grades(self):
+        """
+        Computes the grades for all students, based on the compute_single_grade method implemented in subclass
+        :return:
+        """
+
+        if self.points == None:
+            return
+
+        for student in self.points:
+            # if a student's points are -1, the grade was overwritten manually
+            if self.points[student] != -1:
+                self.grades[student] = self.compute_single_grade(self.points[student])

@@ -44,6 +44,7 @@ categorization:
 - [2] replace prints with logging, fix output of it
 - [2] make sure that pritns/logging follow the convention of "[WHO AM I] message"
 - [2] [EXAM] also accept grading system that goes form high to low
+- [2] [CATEGORY / EXAM] Deal with bonus grades (absolute bonus) -- done as exam / kept in category / ...
 
 ## FRONTEND / GUI
 
