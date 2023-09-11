@@ -4,7 +4,6 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 import matplotlib.pyplot as plt
 
-from backend.exam import Exam
 from backend.student import Student
 
 """
@@ -16,6 +15,8 @@ TODO exam modes:
 - absolut bonus (e.g. +0.25 or so)
 
 """
+
+# TODO remove exams from category -- instead, exams are kept in class, with each exam being assigned a category
 
 class Category:
     def __init__(self, name: str, term: str, classname: str, weight: float, grading_type: str = "default"):
@@ -38,7 +39,6 @@ class Category:
         # TODO this is only used for the exams themselves
         self.term = term
         self.weight = weight
-        self.exams = []
         self.grading_types = ["default"]
         self.grading_type = grading_type
         if self.grading_type not in self.grading_types:
@@ -68,6 +68,8 @@ class Category:
         :return:
         """
 
+        raise NotImplementedError
+
         if points_needed_for_6 is None:
             points_needed_for_6 = max_points
         exam = Exam(name=exam_name,
@@ -95,15 +97,19 @@ class Category:
     def update_grading_type(self):
         raise NotImplementedError
 
-    def aggregate_grades(self, student: Student, exams_to_be_counted: list[Exam]):
+    def aggregate_grades(self, student: Student, grades: list[dict[Student, float]]):
         """
         aggregates the final grade for all exams. Usually simply average, but support other types (based on self.grading_tpe)
         :param exams_to_be_counted:  list for all exams that should be counted for a given student
         :return:
         """
 
+        # TODO change that function to work with new layout (maybe receive list of grades from the exam objects, to avoid circular imports)
+
         # TODO what to do when students are not in all exams etc.
         # => I think caller takes care of it
+
+        raise NotImplementedError
 
         if self.grading_type == "default":
             sum = 0

@@ -16,15 +16,15 @@ categorization:
 - [1] permissions for files using `os.chmod(filename, 0o444), probably 0x664 (root can edit)
     - RW for all exam data
     - R on student list -- don't want users to mess with that
-- [1] pick files using file dialog: https://stackoverflow.com/questions/9319317/quick-and-easy-file-dialog-in-python
+- [1] pick files/folders using file dialog: https://stackoverflow.com/questions/9319317/quick-and-easy-file-dialog-in-python
 - [1] clean up folder / file names, it's a mess currently; make it more "resilient"
 - [2] data persistence: how and when to store what -> make sure it's fine the way it is
     - maybe use SQL instead to do it properly (but seems to be an overkill, not enough data for SQL to be beneficial)
 - [3] proper logging everywhere
 - [1] make sure implementation can deal with student not writing exams
-- [1] Better string handling for student names -- store everyhting as .lower(), show as capitalize()
+- [1] Better string handling for student names -- store everything as .lower(), show as capitalize()
     - accept lower/upper case input
-- [1] Include checks that exam and category names differ
+- [2] Include checks that exam and category names differ
 - [1] Implement __eq__ for exam / category -> use with above point to infer whether exam should be renamed (different grades) or whehter user meant same exam (same name, poits, gradse)
 - [1] mb don't add grade report (for average grades etc) as single file -- instead, simply append it.
     - or add it as a separate arbeitsmappe -- that does not screw up my loading function
@@ -33,21 +33,21 @@ categorization:
 - [2] how to deal with deleted students -- they will always re-appear when reloading program (maybe inlucde a hidden column with a delted-flag or put that in the csv)
 - [1] make sure to store everyhting to disk appropriately -- e.g. interrupt shutdown or so?
     -  use https://docs.python.org/3/library/atexit.html to deal with shutdowns
-- [1] Use this to open pdf: https://stackoverflow.com/questions/434597/open-document-with-default-os-application-in-python-both-in-windows-and-mac-os
+- [2] Use this to open pdf of exam report https://stackoverflow.com/questions/434597/open-document-with-default-os-application-in-python-both-in-windows-and-mac-os
 - [1] support floats for points (e.g. 22.5)
-- [2] add checks on each gui-function call to catch any potential error.
 - [3] when adding new class, use categories from most recent class as template
 
 - [1] Replace Exam class by subclasses for different calculation types (linear, ...)
 - [1] Storing: Use Export to xlsx and store overview to json
 - [1] Restructure code: Categories don't have a list of exams, but instead a class has a list of exams
-
-
+- [3] maybe add date as a field for exam
+- [2] replace prints with logging, fix output of it
+- [2] make sure that pritns/logging follow the convention of "[WHO AM I] message"
+- [2] [EXAM] also accept grading system that goes form high to low
 
 ## FRONTEND / GUI
 
 - [] Find out how to do actions in PyQt
-- [] Find out how to do treeviews in PyQt
 - [2] sanitize user inputs everywhere
 - [2] add check that the user does not include too many categories (screws up loading / storing) -- cap at 15 or so
 - [1] support floats for points (e.g. 22.5)
@@ -57,13 +57,15 @@ categorization:
 - [4] Find way to do "recent DBs" in menu bar
 - [1] make newest semester tab active during startup
 - [2] Update semester in main/startup window
-- [1] in klassenübersicht: schnitt und anzahl prüfung pro student in treeview anzeigen
 - [1] in exam: schnitt in treeview anzeigen
 - [1] kategorienübersicht rechts
 - [2] in treeview selection, make selection more convenient (esc removes any selected item, pressing outside of the treeview too, only allow multiselect when pressing shift, ...)
 - [3] dynamically adjust window size to avoid scrolling within treeviews
 - [2] how to deal with weight of categories not being 1 -- e.g., average grade by student does not make sense in treeview than
 - [2] Maybe exchange treeviews with tableviews
+- [1] class WindowExamDetail: dynamically adjust GUI based on Exam type chosen (with subclasses of Exam)
+- [2] add default values for a new class (default category "Voci-Exams", default exam "Voci 1", ...)
+- [2] add checks on each backend-function call to catch any exception.
 
 
 ## DISTRIBUTION
@@ -80,7 +82,7 @@ categorization:
 - [4] do the thing securely, like encrypting exam data, ...
 - [4] Add functionality for restoring stuff from a .trash folder within program
     - remove trash functionality for now, it just litters the disk
-- [4] support english => apparently, this is best done using some dictionary "text A" -> [case DE] "Hallo", [case EN] "Hello" -> google
+- [2] support english => apparently, this is best done using some dictionary "text A" -> [case DE] "Hallo", [case EN] "Hello" -> google
 - [3] add grading mode "curve fitting": instead of linear, say where the 4 is and where the 6 is
     - can also do that with arbitrary many grades; use linear interapolation for grades in between
     - use fancy interpolations because of reasons, alternatively

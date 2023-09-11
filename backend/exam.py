@@ -5,6 +5,7 @@ from reportlab.pdfgen import canvas
 import matplotlib.pyplot as plt
 
 from backend.student import Student
+from backend.category import Category
 
 """
 TODO exam modes:
@@ -19,41 +20,30 @@ TODO exam modes:
 """
 
 class Exam:
-    def __init__(self, name: str, term: str, classname: str, category: str, max_points: int, points: dict[Student, int] = {}, points_needed_for_6: int = None,
-                 min_grade: int = 1, max_grade=6, grades: dict[Student, float] = None, grade_computation="linear"):
+    def __init__(self, name: str, term: str, classname: str, category: Category,
+                 min_grade: float, max_grade: float, grades: dict[Student, float]):
         self.name = name
         # term = hs23 etc.
         self.term = term
         self.class_obj: str = classname
-        self.category: str = category
-        self.max_points = max_points
-        self.points_needed_for_6 = points_needed_for_6
-        if min_grade != 1:
-            logging.info(f"Exa: changing default for min_grade")
+        self.category: Category = category
+        if min_grade > max_grade:
+            raise RuntimeError(f"Minimum grade must be smaller than maximum grade")
         self.min_grade = min_grade
         self.max_grade = max_grade
-        self.points = {}
-        if self.points != {}:
-            self.points = points
-        self.computation_strategy = grade_computation
-        self.computation_strategies = ["linear"]
+
+        # replaced the self.points by self.grades -- the subclasses should keep the points (e.g. for oral grades..)
+
         self.grades: dict[Student, float] = {}
         if grades != None:
-            logging.warning("Manually overwriting grades with user input. Might be inconsistent with points received by students")
             self.grades: dict[Student, float] = grades
 
-        if max_points < points_needed_for_6:
-            raise RuntimeWarning("Maximum amount of points should be smaller than points needed for 6")
-
-        if min_grade < 1:
-            min_grade = 1
-            logging.warning("Setting minimum grade to 1. Lower values don't make sense")
-
+        # TODO only makes sense in a setting where grades grow from 1 to 6
         if min_grade > max_grade:
-            logging.error("Received higher min_grade than max_grade")
+            raise RuntimeError(f"Received higher min_grade than max_grade")
 
     def __str__(self):
-        return f"{self.name}-{self.term}"
+        return f"{self.name} ({self.term})"
 
     def __repr__(self):
         return f"E-{self.name}-{self.term}"
@@ -63,7 +53,7 @@ class Exam:
 
         :return: The number of students that have written this exam
         """
-        raise NotImplementedError
+        return len(self.points.keys())
 
 
     def rename(self, new_name: str):
@@ -75,7 +65,7 @@ class Exam:
         # TODO maybe include some checks
         self.name = new_name
 
-    def change_category(self, new_category: str):
+    def change_category(self, new_category: Category):
         """
         Changes category of the exam:
         1. Add exam to class_obj.new_category
@@ -94,61 +84,57 @@ class Exam:
         :return:
         """
 
-        if self.computation_strategy not in self.computation_strategies:
-            raise NotImplementedError(f"Did not implement other ways to compute a grade yet\n Try using linear instead of {self.computation_strategy}")
-
-        if points > self.max_points:
-            logging.warning("Got too many points, capping at maximum")
-            points = self.max_points
-
-        if self.computation_strategy == "linear" or self.computation_strategy == "default":
-            grade = self.min_grade + (self.max_grade - self.min_grade) * points / self.points_needed_for_6
-            grade = round(grade, 4)
-            if grade >= 6:
-                grade = 6
-
-        return grade
+        # TODO this function should be overwritten in subclasses
+        raise NotImplementedError
 
     def compute_grades(self):
         """
-        Using the points, compute the corresponding grades according to grade_computation strategy
+        Computes the grades for all students, based on the compute_single_grade method implemented in subclass
         :return:
         """
 
         if self.points == None:
             return
 
-        old_grades = self.grades
-
         for student in self.points:
+            # TODO check for point being -1 (see below), i.e. the grade was overwritten manually
             self.grades[student] = self.compute_single_grade(self.points[student])
 
-        student_changes = []
-        for student in old_grades:
-            if student not in self.grades or self.grades[student] != old_grades[student]:
-                student_changes.append(student)
+    def add_grades_manually(self, grades: dict[Student, float]):
+        """
+        Wrapper that allows calling add_grade_manually for multiple students
+        :param grades: Dict containing the grades of the students that should be overwritten
+        :return:
+        """
 
-        for student in self.grades:
-            if student not in old_grades:
-                student_changes.append(student)
+        for stud in grades:
+            self.add_grade_manually(stud, grades[stud])
 
-        if old_grades != self.grades:
-            logging.warning(f"Grades changed after this update for the following students: \n{student_changes}")
 
     def add_grade_manually(self, student: Student, grade: float):
         """
         Manually add grade (used to overwrite stuff). Callers job to ensure student is in class
         :param student:
         :param grade:
-        :return:
+        :return: -1 if grade was too low, 1 if grade was too high -- will be truncated in either case
         """
 
-        # TODO boundary checks on grade
+        ret = 0
+        if grade < self.min_grade:
+            ret = -1
+            grade = self.min_grade
+        elif grade > self.max_grade:
+            ret = 1
+            grade = self.max_grade
 
-        if grade < self.min_grade or grade > self.max_grade:
-            logging.warning("Manually overwriting with an illegal grade")
+        if student not in self.grades.keys():
+            logging.info(f"Student {student} not yet part of exam, adding them...")
 
         self.grades[student] = grade
+
+        # let the caller know about out of bounds
+        return ret
+
 
     def add_points(self, points: dict[Student, int]):
         """
@@ -170,34 +156,12 @@ class Exam:
 
         self.compute_grades()
 
-    def add_grade_from_points_single_student(self, student: Student, points: int):
-        """
-        calls compute_grade to set the grade
-        :param student:
-        :param points:
-        :return:
-        """
-        self.grades[student] = self.compute_grade(points)
-
-    def add_grades_mass_import(self, grades: dict[Student, float]):
-        """
-        Used to import entire table from frontend, I guess?
-        :return:
-        """
-
-        for student in grades:
-            if student in self.grades:
-                if grades[student] != self.grades[student]:
-                    logging.warning(f"New grade differs for student {student}; old grade {self.grades[student]}")
-                    if student in self.points:
-                        # need to remove student from points list -- if not, then grades will be overwritten next time they're recomputed
-                        self.points.pop(student)
-            self.grades[student] = grades[student]
 
     def generate_summary_report(self, filename):
         """
         Taken from chatGPT, might want to check how well that stuff works
         TODO replace filename with file path
+        TODO might want to move that in subclasses -- depending on exam mode, this might be handled differently (e.g. show table with mapping points -> grades)
         :param filename:
         :return:
         """
@@ -240,4 +204,155 @@ class Exam:
         c.drawImage('histogram.png', 100, 350, width=400, height=200)
         c.showPage()
         c.save()
+
+
+class ExamModeLinear(Exam):
+    def __init__(self, name: str, term: str, classname: str, category: Category, max_points: float, points_for_max: float,
+                 min_grade: int=1, max_grade=6, points: dict[Student, float] = {}, grades: dict[Student, float] = {}):
+        """
+        Subclass of Exam dealing with a standard linear fitting mode (achieved_pts/max_pts * 5 + 1)
+        :param name: exam name, passed to parent
+        :param term: exam term, passed to parent
+        :param classname: which class this exam belongs to, passed to parent
+        :param category: which category this exam belongs to, passed to parent
+        :param max_points: maximum achievable points
+        :param points_for_max: points needed to achieve maximum grade
+        :param min_grade:
+        :param max_grade:
+        :param points: points achieved by students
+        :param grades: manually overwrite computed grades with present grades
+        """
+
+        if len(grades.keys() != 0):
+            # pass the grades argument
+            super().__init__(self, name, term, classname, category, min_grade, max_grade, grades)
+        else:
+            super().__init__(self, name, term, classname, category, min_grade, max_grade)
+
+        # define fields specifically for this class
+        self.max_points = max_points
+        self.points_for_max = points_for_max
+        self.points = points
+
+        # make sure to keep the manually set grade over the one calculated by grades
+        for student in grades:
+            self.points[student] = -1
+
+        if points_for_max > max_points:
+            raise RuntimeError(f"Points needed for max grade ({points_for_max}) cannot be higher than maximum possible points ({max_points})")
+
+    def compute_single_grade(self, points: float):
+        """
+        Computes the grade corresponding to the amount of points, based on params stored in class
+        :param points:
+        :return: resulting grade, based on received points
+        """
+
+        if points < -1:
+            raise RuntimeError(f"[EXAM] Cannot compute grade based on negative points")
+
+        # compute the grade
+        grade = self.min_grade + (self.max_grade - self.min_grade) * points / self.points_needed_for_6
+        grade = round(grade, 4)
+
+        if grade >= self.max_grade:
+            logging.warning("[EXAM] Resulting grade was too hight, capping at maximum grade")
+            grade = self.max_grade
+
+        return grade
+
+    def add_grade_manually(self, student: Student, grade: float):
+        """
+        Manually add grade (used to overwrite stuff). Callers job to ensure student is in class
+        :param student:
+        :param grade:
+        :return: -1 if grade was too low, 1 if grade was too high -- will be truncated in either case
+        """
+
+        ret = 0
+        if grade < self.min_grade:
+            ret = -1
+            grade = self.min_grade
+        elif grade > self.max_grade:
+            ret = 1
+            grade = self.max_grade
+
+        if student not in self.points.keys():
+            logging.info(f"Student {student} not yet part of exam, adding them...")
+
+        # mark that the student's grade was overwritten and should not be automatically computed
+        self.points[student] = -1
+        self.grades[student] = grade
+
+        # let the caller know about out of bounds
+        return ret
+
+    def compute_grades(self):
+        """
+        Computes the grades for all students, based on the compute_single_grade method implemented in subclass
+        :return:
+        """
+
+        if self.points == None:
+            return
+
+        for student in self.points:
+            # if a student's points are -1, the grade was overwritten manually
+            if self.points[student] != -1:
+                self.grades[student] = self.compute_single_grade(self.points[student])
+
+class ExamModeSetGradeManually(Exam):
+    def __init__(self, name: str, term: str, classname: str, category: Category,
+                 min_grade: int = 1, max_grade=6, grades: dict[Student, float] = {}):
+        super().__init__(self, name, term, classname, category, min_grade, max_grade, grades)
+
+        def compute_single_grade(self, points):
+            """
+            Must implement this function here, else I'll get errors when Exam.compute_grades() is called from somewhere.
+            Does not provide any functionality, but avoids the NotImplementedError in parent class
+            :param self:
+            :param points:
+            :return:
+            """
+
+            return
+
+
+class ExamModeCurveLinearWithPassingPoints(ExamModeLinear):
+    def __init__(self, name: str,
+                 term: str,
+                 classname: str,
+                 category: Category,
+                 max_points: float,
+                 points_for_max: float,
+                 points_for_pass: float,
+                 min_grade: float=1,
+                 passing_grade: float=4,
+                 max_grade: float=6,
+                 points: dict[Student, float] = {},
+                 grades: dict[Student, float] = {}):
+        """
+        Allows setting a cutoff for passing grade (allowing the teacher to adjust the resulting grades more for difficult exams)
+        :param points_for_max: points for maximal grade
+        :param points_for_pass: points for passing grade
+        :param min_grade: minimum grade, 1 in Switzerland
+        :param passing_grade: passing grade, 4 in Switzerland
+        :param max_grade: max grade, 6 in Switzerland
+        """
+
+        self.passing_grade = passing_grade
+        self.points_for_pass = points_for_pass
+        if points_for_pass > points_for_max:
+            raise RuntimeError(f"Passing points cannot be higher than points for max")
+
+        if not (min_grade <= passing_grade <= max_grade):
+            raise RuntimeError(f"Passing grade must be in between minimum possible and maximum possible")
+        if points_for_max > max_points:
+            raise RuntimeError(
+                f"Points needed for max grade ({points_for_max}) cannot be higher than maximum possible points ({max_points})")
+
+
+        super().__init__(self, name, term, classname, category, max_points, points_for_max,
+                 min_grade, max_grade, points, grades)
+
 

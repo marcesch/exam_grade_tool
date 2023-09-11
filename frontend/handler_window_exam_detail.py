@@ -6,7 +6,7 @@ from ui_window_class_detail import  Ui_WindowClassDetail
 
 class WindowExamDetail(QMainWindow, Ui_WindowExamDetails):
 
-    # TODO need to add button "generate exam report"
+    # TODO dynamically add some of the buttons (based on the exam type, e.g. max points, ...)
 
     def __init__(self, exam: Exam, parent=None):
 
@@ -16,4 +16,6 @@ class WindowExamDetail(QMainWindow, Ui_WindowExamDetails):
         print(f"[WINDOW EXAM DETAIL] got here with {exam} {exam.grades}")
 
         self.setupUi(self)
+
+        # TODO show data in tableview to see how it behaves
 
