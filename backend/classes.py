@@ -6,11 +6,9 @@ import shutil
 import openpyxl
 import time
 
-from backend.category import Category
-from backend.exam import Exam
+from backend.category import *
+from backend.exam import *
 from backend.student import Student
-
-FOLDERPATH = "/home/marcesch/noten/tmp/klassen/"
 
 
 
@@ -30,32 +28,21 @@ TODO cna python also handle xlsx files? might be a little bit more convenient th
 
 class Class:
     def __init__(self, name: str, term: str, year: int):
-        self.students: list[Student] = []
-        self.categories: list[Category] = []
-        # TODO do changes consistently s.t. list of exams is kept
-        self.exams = []
         self.name: str = name
+        self.year: int = year
+
+        self.students: list[Student] = []
+        self.categories: list[BaseCategory] = []
+        self.exams: list[Exam] = []
+        # keeps a list of current average_grades for each student (so it can be displayed in GUI)
+        self.average_grades: dict[Student, float] = {}
+
         if (term.lower() == "hs"):
             self.term: str = term.upper()
+        elif (term.lower() == "fs"):
+            self.term: str = term.upper()
         else:
-            if (term.lower() == "fs"):
-                self.term: str = term.upper()
-            else:
-                raise RuntimeError("Please choose either HS or FS")
-        self.year: int = year
-        self.filename_class_base = ""
-        self.filename_class = ""
-        self.filename_base_examfilename_base_exam = ""
-        self.update_filenames()
-        self.folder_shadow = FOLDERPATH + ".trash/"
-        self.report_id = 0
-        self.supported_filetypes = ["xlsx", "csv"]
-
-
-        if not os.path.exists(self.filename_base_exam):
-            os.makedirs(self.filename_base_exam)
-        else:
-            logging.warning(f"Directory '{self.filename_base_exam}' already exists.")
+            raise RuntimeError(f"[CLASS] Either choose HS or FS for term (got {term})")
 
     def __str__(self):
         return f"{self.name} {self.term.upper()}{self.year}"
@@ -63,6 +50,7 @@ class Class:
     def __repr__(self):
         return f"C-{self.name} {self.term.upper()}{self.year}"
 
+    # FUNCTIONS TO ENABLE EASY SORTING
     def __le__(self, other):
         """
         Comparison based on year and term
@@ -88,68 +76,19 @@ class Class:
         "Does NOT compare exams etc. ==> only used for sorting!!"
         return self.term == other.term and self.year == other.year and self.name == other.name
 
-    # TODO maybe add other comparisons, check again if that makes sense.
-
-    def number_exams_in_category(self, cat: Category):
-        """
-        Returns the number of exams that match the category
-        :param cat:
-        :return:
-        """
-        raise NotImplementedError
-
-    def change_category_of_exam(self, exam: Exam, cat: Category):
-        """
-        Sets another category for the exam
-        :param exam: exam whose cateogry should be changed
-        :param cat: new category for the exam
-        :return:
-        """
-        raise NotImplementedError
-
-
-    def compute_average_grade(self, student: Student):
-        """
-        Computes average grade of student across all exams
-        :param student:
-        :return:
-        """
-        raise NotImplementedError
-
-    def compute_average_grades(self):
-        """
-        Computes average grades of all students
-        :return:
-        """
-        raise NotImplementedError
-
     def update_name(self, new_name: str):
         self.name = new_name
-        self.update_filenames()
-        # TODO rename stored file containing list of class, otherwise name gets "rewritten" once program gets loaded.
 
-    def update_filenames(self):
+    def update_semester(self, new_name=None):
         """
-        after seen a change (e.g. year / term / ...), need to adjust the filename
+        Used to update this class to new semester: increment the semester/term values, give option for new name, return new class object
+
+        => does that function make sense in classes? it's probably easier in overview
+        :param new_name:
         :return:
         """
-        # TODO ask selina for her preferences regarding layout of files
-        # TODO remove old files
-        classname_complete = str(self.year) + "_" + self.term.upper() + "_" + self.name
-        self.filename_class_base = FOLDERPATH + classname_complete
-        self.filename_class = self.filename_class_base + ".csv"
-        # or use self.filename_class = self.filename_class_base + "/" + classname_complete + ".csv"
-        self.filename_base_exam = self.filename_class_base + "/pruefungen/"
 
-    def update_semester(self, new_name = None):
-        """
-        :return:
-
-        updates the semester by one term
-        creates new file for grades
-        """
-        # TODO keep old names / ... in array previous_semesters -- can be used in GUI to switch tabs
-
+        raise NotImplementedError
 
         self.report_id = 0
         oldterm = self.term
@@ -183,104 +122,49 @@ class Class:
         self.categories = []
         self.initialize_categories_from_old(old_categories)
 
-
-    def store_to_database(self):
-        # TODO replace -- use an export function instead.
+    def number_exams(self):
         """
-        Stores the old class file to the trash-folder and stores an updated version
+        :return: number of currently stored exams
+        """
+        return len(self.exams)
+
+    def number_exams_of_category(self, category: BaseCategory):
+        """
+        Returns the number of exams that match the category
+        :param cat:
         :return:
         """
-        students_old = []
-        # load "old" student's database for comparison
-        # Read the list of students from the CSV file
-        try:
-            with open(self.filename_class, "r") as csvfile:
-                reader = csv.reader(csvfile)
-                # Skip the header row
-                next(reader)
-                # Iterate over the rows in the CSV file and create a new Student object for each row
-                for row in reader:
-                    student = Student(row[0], row[1])
-                    students_old.append(student)
 
-            # find difference between the two files
-            students_removed = []
-            for student in students_old:
-                b, student_diff = self.contains_student(student.firstname, student.lastname)
-                if b:
-                    students_removed.append(student_diff)
+        counter = 0
+        for exam in self.exams:
+            if exam.category == category:
+                counter += 1
 
-            if len(students_removed) == 0 and len(students_old) == len(self.students):
-                print("The class has not changed. Won't store anything")
-                return
+        return counter
 
-            if len(students_removed) != 0:
-                print(
-                    f"REMOVING the following students from the database. If this was an error, you can find the old file in {self.folder_shadow}")
-                for student in students_removed:
-                    print(f"Removing student {student.firstname} {student.lastname}")
-
-            # move "old" student's database to trash-folder
-            logging.info("Moving old database to trash folder")
-            shutil.move(self.filename_class, f"{self.folder_shadow}{time.time()/60}_{self.filename_class}")
-        except:
-            logging.info(f"No old class list found on disk")
-
-        # store "new" / current database under folderpath
-        # Write the list of students to a CSV file
-        with open(self.filename_class, "w", newline="") as csvfile:
-            writer = csv.writer(csvfile)
-            # Write the header row to the CSV file
-            writer.writerow(["Nachname", "Vorname"])
-            # Write each student's first name and last name to the CSV file
-            for student in self.students:
-                writer.writerow([student.lastname, student.firstname])
-
-    def number_exams_taken(self, student: Student):
+    def number_exams_for_student(self, student: Student):
         """
-
-        :param student: Student from class
-        :return: Int (number of exams that this student has written)
-        """
-
-        raise NotImplementedError
-
-    def average_grade(self, student: Student):
-        """
-
+        Returns number of exams that the student has written
         :param student:
-        :return: Returns current average grade of student
-        """
-
-        raise NotImplementedError
-
-
-    def get_student(self, first: str, last: str):
-        """
-        Really just a wrapper function for contains_student
-        :param first:
-        :param last:
-        :return:  Student object corresponding to the firstname / lastname combination
-        """
-        _, student = self.contains_student(first, last, return_student=True)
-        return student
-
-    def get_category(self, category_name: str):
-        """
-        Get category object corresponding to category_name
-        :param category_name:
         :return:
         """
 
-        for cat in self.categories:
-            if cat.name == category_name:
-                return cat
+        return len([exam for exam in self.exams if student in exam.grades])
 
-        # If not matching name was found at this time, exception
-        raise RuntimeError(f"No category {category_name} found in my list: \n {self.categories}")
+    def change_category_of_exam(self, exam: Exam, new_category: BaseCategory):
+        """
+        Sets another category for the exam
+        :param exam: exam whose cateogry should be changed
+        :param new_category: new category for the exam
+        :return:
+        """
+        exam.change_category(new_category)
 
 
-    def contains_student(self, first: str, last: str, return_student=False):
+
+
+
+    def contains_student(self, first: str = "", last: str="", return_student=False):
         """
         Slow and unelegant, but hey
         Allows only searching for one of the names (surname or firstname), this is a little bit more convenient
@@ -289,7 +173,10 @@ class Class:
         :param last:
         :return:
         """
-        if first == None and last == None:
+
+        # TODO rewrite in nice
+
+        if first == "" and last == "":
             raise RuntimeError("Must give at least one name")
         first = first.lower()
         last = last.lower()
@@ -310,6 +197,51 @@ class Class:
             return res, res_student
         return res
 
+
+    def get_student(self, first: str, last: str):
+        """
+        Really just a wrapper function for contains_student
+        :param first:
+        :param last:
+        :return:  Student object corresponding to the firstname / lastname combination
+        """
+
+        # TODO rewrite in nice
+        # also contains_student should call get_student, not vice versa (contains can check if get_student returns None
+
+        _, student = self.contains_student(first, last, return_student=True)
+        return student
+
+    def get_category(self, category_name: str):
+        """
+        Get category object corresponding to category_name
+        :param category_name:
+        :return:
+        """
+
+        for cat in self.categories:
+            if cat.name == category_name:
+                return cat
+
+        # If not matching name was found at this time, exception
+        raise RuntimeError(f"No category {category_name} found in my list: \n {self.categories}")
+
+
+    def get_exam(self, exam_name: str):
+        """
+        Gets exam object based on name
+        :return: reference to Exam object corresponding to the name
+        """
+        for ex in self.exams:
+            if ex.name == exam_name:
+                return ex
+
+        raise RuntimeError(f"Could not find exam {exam_name} in list {self.exams}")
+
+
+
+
+    # TODO better name for this method
     def initialize_new_class(self, students: list[dict[str, str]]):
         """
         creates new class from scratch and stores the data of the students as a csv.
@@ -338,6 +270,11 @@ class Class:
         deltes class AND ALL ITS FILES
         :return:
         """
+
+        # TODO overview class will take care of that
+
+        raise NotImplementedError
+
         # TODO could also just move it to the trash folder -- need to decide that later
         logging.warning(f"Removing all the files for class {self.name} {self.term} {self.year}. This action cannot be reverted.")
         os.remove(self.filename_class_base)
@@ -355,24 +292,6 @@ class Class:
                 # if the item is a directory, recursively delete it and all its contents
                 shutil.rmtree(item_path)
 
-
-
-    def empty_trash(self):
-        """
-        removes everything from the trash folder, raising tons of warnings
-
-        :return:
-        """
-        logging.warning("DELETING the entire contents of the trash folder")
-
-        for item in os.listdir(self.folder_shadow):
-            item_path = os.path.join(self.folder_shadow, item)
-            if os.path.isfile(item_path):
-                # if the item is a file, delete it
-                os.remove(item_path)
-            elif os.path.isdir(item_path):
-                # if the item is a directory, recursively delete it and all its contents
-                shutil.rmtree(item_path)
 
     def add_student(self, first: str, last: str):
         """
@@ -408,7 +327,7 @@ class Class:
         else:
             raise RuntimeError(f"Could not find exam {exam} in class {self}")
 
-    def delete_category(self, category: Category):
+    def delete_category(self, category: BaseCategory):
         """
         Deletion based on object reference instead of name. Replace other funciton usages with delete instead of remove
         :param category: Category to be deleted
@@ -445,12 +364,37 @@ class Class:
 
         raise RuntimeError(f"Could not find that Category in the list {self.categories}")
 
-    def remove_category(self, cat: str):
+    def delete_category(self, cat: str):
         if self.contains_category(cat):
             category = self.find_category(cat)
             self.categories.remove(category)
         else:
             raise RuntimeError(f"Could not find that category in the list {self.categories}")
+
+    def add_category(self,
+                     category_name: str,
+                     category_type: str,
+                     weight: float = 0,
+                     bonus_amount: float = 0,
+                     number_drop_grades: int = 0):
+        """
+        Add category. Based on the key "type", the exact type of the category should be distinguished (e.g. CategoryDefault, ..)
+        :param category_description: dictionary containing the necessary fields to create category.
+        :return:
+        """
+
+        type = category_type
+        new_category = None
+        if type == "default":
+            new_category = CategoryDefault(category_name, weight)
+        elif type == "drop_grade":
+            new_category = CategoryWithDroppedGrades(category_name, weight, number_drop_grades)
+        elif type == "bonus":
+            new_category = CategoryBonus(category_name, bonus_amount)
+        elif type == "voluntary":
+            new_category = CategoryOnlyIfImproves(category_name, weight)
+
+        self.categories.append(new_category)
 
     def change_category(self, exam_name: str, new_cat: str):
         """
@@ -478,70 +422,7 @@ class Class:
 
         exam.category = new_cat
 
-    def add_category(self, cat: dict[str: str]):
-        logging.info("Adding category")
-        # TODO check if categroy already exists
-        grading_type = cat["grading_type"] if "grading_type" in cat else "default"
-        self.categories.append(Category(name=cat["name"], term=f"{self.year}{self.term.upper()}", classname=self.name,
-                                        weight=cat["weight"], grading_type=grading_type))
 
-    def initialize_categories_from_old(self, exam_categories: list[Category]):
-        for cat in exam_categories:
-            self.categories.append(Category(cat.name, f"{self.year}{self.term.upper()}", self.name, cat.weight, cat.grading_type))
-
-    def initialize_categories(self, exam_categories: list[dict[str: typing.Any]]):
-        """
-        Not quite sure how exactly to do that part -- It might be reasonable to use a wrapper function that checks that
-        the weight of the categories always sum to 1 (invariant regarding the correctness) instead of letting user create
-        categories individually
-
-        Downside: need to create all of them at once, always. But I think, GUI can help me here to make it reasonably nice to use
-
-        :return:
-        """
-
-        # TODO deal with same keys -- different entries -> raise exception or so
-
-        # TODO check for missing weights (or let caller handle that)
-
-        logging.info(f"Initializing list of categories")
-        for cat in exam_categories:
-            grading_type = cat["grading_type"] if "grading_type" in cat else "default"
-            self.categories.append(Category(name=cat["name"], term=f"{self.year}{self.term.upper()}", classname=self.name, weight=cat["weight"], grading_type=grading_type))
-
-    def upadte_categories(self, exam_categories: list[dict[str: str]]):
-        """
-        Not quite sure how exactly to do that part -- It might be reasonable to use a wrapper function that checks that
-        the weight of the categories always sum to 1 (invariant regarding the correctness) instead of letting user create
-        categories individually
-
-        Downside: need to create all of them at once, always. But I think, GUI can help me here to make it reasonably nice to use
-
-        :argument exam_categories: list of exam-category info. Use keys "name", "weight" and "grading_type"
-        :return:
-        """
-
-        # Check that sum always stays one -- what argumend should I get?
-        # maybe list with updated categories -- check that every existent category still exists (otherwise, exams get deleted!!!)
-
-        new_names = []
-        for cat in exam_categories:
-            new_names.append(cat["name"])
-
-        for old_cat in self.categories:
-            if old_cat.name not in new_names:
-                if len(old_cat.exams) != 0:
-                    raise RuntimeError(f"Cannot delete category {old_cat} as there is an exam in that Category.")
-
-        logging.info(f"Updating list of categories")
-        for cat in exam_categories:
-            if self.contains_category(cat["name"]):
-                cat_in_list = self.find_category(cat["name"])
-                cat_in_list.weight = cat["weight"]
-                if "grading_type" in cat:
-                    cat_in_list.grading_type = cat["grading_type"]
-            else:
-                self.add_category(cat)
 
 
     def add_exam(self, exam_name: str,
@@ -574,6 +455,8 @@ class Class:
 
         # TODO use an exam object here instead of the other whacky shit. Also, use subclasses to deal with different grading strategies
 
+        raise NotImplementedError
+
         # check if category is present:
         category = None
         for cat in self.categories:
@@ -582,7 +465,7 @@ class Class:
                 break
         if category is None:
             logging.warning(f"Did not find category. Creating new one. NEED TO SET WEIGHT MANUALLY!")
-            category = Category(exam_category, self.term, self.name, weight=0)
+            category = BaseCategory(exam_category, self.term, self.name, weight=0)
             self.categories.append(category)
 
         new_exam = category.add_exam(exam_name,
@@ -609,13 +492,100 @@ class Class:
         # making sure to store that exam in Excel file
         self.store_exams()
 
-    def store_exams(self, filetype="xlsx"):
+
+
+    def compute_average_grade_student(self, student: Student):
+        """
+        Computes average grade of student across all exams
+        :param student:
+        :return:
+        """
+
+        """
+        TODO Issues with this function:
+        - Very unelegant solution
+        - Non-obligatory grades don't work that way
+        - Find better solution for weight != 1
+        """
+
+        grades_per_cat: dict[BaseCategory, list[float]] = {}
+        all_present_categories = []
+        for exam in self.exams:
+            if exam.category not in all_present_categories:
+                all_present_categories.append(exam.category)
+            if student in exam.grades.keys():
+                grades_per_cat[exam.category].append(exam.grades[student])
+
+        # TODO will fail with bonus grades, find better solution
+        if len(all_present_categories) != grades_per_cat:
+            raise RuntimeWarning(f"Student did not write exams in all categories")
+
+
+        sum_weights = 0
+        weighted_cats = []
+        for category in grades_per_cat:
+            category.aggregate_grades(grades_per_cat[category])
+            # not all categories have a weight
+            try:
+                weighted_cats.append(category)
+                sum_weights += category.weight
+            except:
+                logging.warning(f"Category {category} does not have a weight field")
+
+        if sum_weights > 1 or sum_weights == 0:
+            raise RuntimeError(f"Cannot compute weighted average for student {student}. Sum of weights is {sum_weights} (should be 1)")
+
+
+        # rescale if weights don't sum up to 1
+        scaling_factor = 1
+        if sum_weights != 1:
+            logging.warning(f"Weight over categories for student {student} does not equal 1. Going to re-scale the weights accordingly")
+            scaling_factor = 1 / sum_weights
+
+        # get grade based on all weighted categories
+        grade = 0
+        for category in weighted_cats:
+            grade += scaling_factor * category.weight * grades_per_cat[category]
+
+
+        # take bonus into account
+        for category in grades_per_cat:
+            if isinstance(category, CategoryBonus):
+                grade += grades_per_cat[category]
+
+        # ensure bounds of grades are kept
+        max_grade = 6
+        min_grade = 1
+        return max(min_grade, min(grade, max_grade))
+
+    def compute_average_grades(self):
+        """
+        Computes average grades of all students
+        :return:
+        """
+
+        for student in self.students:
+            try:
+                self.average_grades[student] = self.compute_average_grade_student(student)
+            except:
+                logging.warning(f"[CLASS] Could not compute average grade for student {student}")
+                # mark missing average grade for those students
+                self.average_grades[student] = -1
+
+
+
+    def export_class_overview(self, filetype="xlsx", filepath=""):
         """
         Stores all exams to disk. Most important function, as this allows manual overwrite
         See the layout_gradefiles for details on what goes where, ...
         :param filetype:
+        :param filepath: use default path if none is given
         :return:
         """
+
+        # TODO merge with create_grade_report
+
+        raise NotImplementedError
 
         # TODO sort students according to last name
         # sort students according to lastname
@@ -660,10 +630,10 @@ class Class:
                 worksheet.cell(row=2 + i, column=2, value=cat.name)
                 worksheet.cell(row=2 + i, column=3, value=cat.weight)
                 worksheet.cell(row=2 + i, column=4, value=cat.grading_type)
-                worksheet.row_dimensions[2+i].hidden = True
+                worksheet.row_dimensions[2 + i].hidden = True
 
-            worksheet.cell(row=amount_header_columns-1, column=1, value="Nachname")
-            worksheet.cell(row=amount_header_columns-1, column=2, value="Vorname")
+            worksheet.cell(row=amount_header_columns - 1, column=1, value="Nachname")
+            worksheet.cell(row=amount_header_columns - 1, column=2, value="Vorname")
             for row, student in enumerate(self.students, start=amount_header_columns):
                 worksheet.cell(row=row, column=1, value=student.lastname)
                 worksheet.cell(row=row, column=2, value=student.firstname)
@@ -672,17 +642,18 @@ class Class:
             for cat_column, cat in enumerate(self.categories):
                 for exam_column, exam in enumerate(cat.exams):
                     # store exam headers
-                    exam_column = 2*column_iterator + 3
+                    exam_column = 2 * column_iterator + 3
                     column_iterator = column_iterator + 1
-                    worksheet.cell(row=amount_header_columns-5, column=exam_column, value=exam.min_grade)
-                    worksheet.cell(row=amount_header_columns-5, column=exam_column+1, value=exam.max_grade)
-                    worksheet.cell(row=amount_header_columns-4, column=exam_column, value=exam.max_points)
-                    worksheet.cell(row=amount_header_columns-4, column=exam_column+1, value=exam.points_needed_for_6)
-                    worksheet.cell(row=amount_header_columns-3, column=exam_column, value=exam.computation_strategy)
-                    worksheet.cell(row=amount_header_columns-2, column=exam_column, value=exam.name)
-                    worksheet.cell(row=amount_header_columns-2, column=exam_column+1, value=exam.category)
-                    worksheet.cell(row=amount_header_columns-1, column=exam_column, value="Punkte")
-                    worksheet.cell(row=amount_header_columns-1, column=exam_column+1, value="Note")
+                    worksheet.cell(row=amount_header_columns - 5, column=exam_column, value=exam.min_grade)
+                    worksheet.cell(row=amount_header_columns - 5, column=exam_column + 1, value=exam.max_grade)
+                    worksheet.cell(row=amount_header_columns - 4, column=exam_column, value=exam.max_points)
+                    worksheet.cell(row=amount_header_columns - 4, column=exam_column + 1,
+                                   value=exam.points_needed_for_6)
+                    worksheet.cell(row=amount_header_columns - 3, column=exam_column, value=exam.computation_strategy)
+                    worksheet.cell(row=amount_header_columns - 2, column=exam_column, value=exam.name)
+                    worksheet.cell(row=amount_header_columns - 2, column=exam_column + 1, value=exam.category)
+                    worksheet.cell(row=amount_header_columns - 1, column=exam_column, value="Punkte")
+                    worksheet.cell(row=amount_header_columns - 1, column=exam_column + 1, value="Note")
 
                     # store grading data
                     for row, student in enumerate(self.students, start=amount_header_columns):
@@ -695,62 +666,13 @@ class Class:
                             grade = exam.grades[student]
                         except:
                             grade = ""
-                        worksheet.cell(row=row, column=exam_column+1, value=grade)
+                        worksheet.cell(row=row, column=exam_column + 1, value=grade)
 
-            for row in range(2, amount_header_columns-2):
+            for row in range(2, amount_header_columns - 2):
                 worksheet.row_dimensions[row].hidden = True
 
             logging.info(f"Saved Exam grades to Excel sheet on location{output_name}")
             workbook.save(output_name)
-
-    def update_grade(self, exam: Exam, students: list[Student], new_grades: dict[Student, float], new_points: dict[Student, float], computation_mode = "linear"):
-        """
-        Lets a user update a student's grade, either by letting the program recompute the grade based on their points or manually
-        overwriting everything by setting the grades. Gives priority to recalculating stuff by my program
-        :param exam:
-        :param student:
-        :return:
-        """
-
-        for student in students:
-            if student not in self.students:
-                raise RuntimeError(f"Don't know that student {student}. Did you forget to add it to the class {self.name}?")
-            # give precedence for letting my program recalculating instead of setting manual grades
-            if student in new_points:
-                exam.grades[student] = exam.compute_single_grade(new_points[student], computation_mode)
-            else:
-                if student in new_grades:
-                    exam.grades[student] = new_grades[student]
-                else:
-                    raise logging.error(f"Could not set grade for student {student.firstname} {student.lastname} as they are not in either provided list")
-
-        # store exam to disk
-        self.store_exams(exam)
-
-
-    def fetch_exams(self):
-        """
-        Returns a simple list of exams in all categories
-        :return:
-        """
-        res = []
-        for cat in self.categories:
-            for exam in cat.exams:
-                res.append(exam)
-
-        return res
-
-    def get_exam(self, exam_name: str):
-        """
-        Gets exam object based on name
-        :return:
-        """
-        for ex in self.fetch_exams():
-            if ex.name == exam_name:
-                return ex
-
-        raise RuntimeError(f"Could not find exam {exam_name} in list {self.fetch_exams()}")
-
 
 
     def create_grade_report(self, output_location: str = None, output_name: str = None,  output_type = "xlsx"):
@@ -760,9 +682,12 @@ class Class:
         :return:
         """
 
-        # TODO thoroughly test this function!!!
+        # TODO merge with export_class_overview to a single export function
+        # TODO use this to check my new implementation for errors in unit testing
+
         # basic test has worked, need to test ugly cases (students did not take exam, ...)
 
+        raise NotImplementedError
 
         if output_type != "xlsx":
             logging.info(f"Don't know filetype {output_type}, using .xlsx instead")
@@ -804,7 +729,7 @@ class Class:
 
             # for all those categories where there is no exam seen, I need to add a scaling factor -- see above
 
-            weighted_per_cat: dict[Category, float] = {}
+            weighted_per_cat: dict[BaseCategory, float] = {}
             for cat in exams_per_cat:
                 # compute "average" grade for each category, according to grading type fixed in category
                 weighted_per_cat[cat] = cat.aggregate_grades(student, exams_per_cat[cat])

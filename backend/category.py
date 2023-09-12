@@ -131,6 +131,9 @@ class CategoryOnlyIfImproves(BaseCategory):
     def __init__(self, name: str, weight: float):
         """
         Exam results from this category should only count if it improves the grade.
+
+        TODO might make more sense as an exam-tag instead of a separate category
+
         :param name:
         :param weight:
         """
@@ -138,12 +141,12 @@ class CategoryOnlyIfImproves(BaseCategory):
 
 class CategoryBonus(BaseCategory):
     # TODO might do that as an exam without a category
-    def __init__(self, bonus_weight, achieved_bonus: dict[Student, float]):
+    def __init__(self, name,  max_bonus_amount):
         """
         Subclass for categories that should not count towards weight, but instead be added absolutely. E.g. bonus grade of 0.25
         :param bonus_weight: How much should the absolute bonus count towards the final grade
-        :param achieved_bonus: "Hardcode" the achieved bonus instead of creating a new exam
         """
-        self.bonus_weight = bonus_weight
-        self.achieved_bonus = achieved_bonus
+        self.bonus_weight = max_bonus_amount
+        self.achieved_bonus = dict[Student, float]= {}
+
         raise NotImplementedError

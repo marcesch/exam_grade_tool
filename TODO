@@ -45,6 +45,10 @@ categorization:
 - [2] make sure that pritns/logging follow the convention of "[WHO AM I] message"
 - [2] [EXAM] also accept grading system that goes form high to low
 - [2] [CATEGORY / EXAM] Deal with bonus grades (absolute bonus) -- done as exam / kept in category / ...
+- [ ] Exam: when the user enters points, it always has precedence over manually set grade.
+- [1] Exam: Don't truncate points achieved at max points, instead truncate grades over 6 (so teacher still sees that student was over max)
+- [2] Class: The compute_average_grade method could be improved to better deal with e.g. student missing exams (thus, weight does not sum to 1), bonus grades, ...
+- [2] allow other max grades consistenly, also outside exam environment
 
 ## FRONTEND / GUI
 
