@@ -8,56 +8,62 @@ categorization:
 [4]: nice-to-have-features if I want to build this thing BIG
 
 ## BACKEND
-- [2] clean up code
+- [1] clean up code
+    - [EXAM]:
+        - No old code except the grade report pdf thingy
+        - needs testing
+        - NotImplementedErrors, open TODOs
+    - [CATEGORY]:
+        - No old code
+        - NotImplementedErrors, open TODOs
+    - [CLASSES]:
+        - write add_exam
+        - compute_average_grade_student is messy
+        - merge export_class_overview, create_grade_report
+        - test that list of categories is a) complete (every category that occurs in some exam is in that list),
+          and b) during computation of grade, that every category contains exams (computation of average is hard otherwise)
+    - [OVERVIEW]
+        - Did not start rewrite here
+        - implement storing and loading from scratch
+        - Take care of storing things as json / ...!!!
+        - Storing: Json vs. a filesystem thingy where I store stuff as excel?
+            => for now, use a predetermined location and simply store as json -- complex afterwards
+            - On Unix-like systems in ~/.your_program_name/
+            - On Windows, the equivalent location would be C:\Users\<Username>\AppData\Local\YourProgramName\.
+            - os.path.expanduser("~\\AppData\\Local\\YourProgramName")
+- [1] make sure to store everyhting to disk appropriately -- e.g. interrupt shutdown or so?
+    -  use https://docs.python.org/3/library/atexit.html to deal with shutdowns
 - [2] Distinguish between filesystem => use os.path.join() for filepaths, ...
-- [2] consistently use xlsx as default instead of csv, remove support for csv files -- not needed anyway; users won't be able to deal with that shit.
-    - if I want to keep it, I'd rather write a short function that converts the excel files to a csv.
-    - Or even use an SQL database to do it properly
-- [1] permissions for files using `os.chmod(filename, 0o444), probably 0x664 (root can edit)
+- [2] permissions for files using `os.chmod(filename, 0o444), probably 0x664 (root can edit)
     - RW for all exam data
     - R on student list -- don't want users to mess with that
 - [1] pick files/folders using file dialog: https://stackoverflow.com/questions/9319317/quick-and-easy-file-dialog-in-python
-- [1] clean up folder / file names, it's a mess currently; make it more "resilient"
-- [2] data persistence: how and when to store what -> make sure it's fine the way it is
-    - maybe use SQL instead to do it properly (but seems to be an overkill, not enough data for SQL to be beneficial)
 - [3] proper logging everywhere
 - [1] make sure implementation can deal with student not writing exams
-- [1] Better string handling for student names -- store everything as .lower(), show as capitalize()
+- [3] make sure implementation can deal with student that has missed all exams of a category
+- [2] Better string handling for student names -- store everything as .lower(), show as capitalize()
     - accept lower/upper case input
-- [2] Include checks that exam and category names differ
-- [1] Implement __eq__ for exam / category -> use with above point to infer whether exam should be renamed (different grades) or whehter user meant same exam (same name, poits, gradse)
-- [1] mb don't add grade report (for average grades etc) as single file -- instead, simply append it.
-    - or add it as a separate arbeitsmappe -- that does not screw up my loading function
-    => Probably best: do everything within this program sphere and allow excel import / export
-    => use json-pickle etc., makes things cleaner and more reliable
-- [2] how to deal with deleted students -- they will always re-appear when reloading program (maybe inlucde a hidden column with a delted-flag or put that in the csv)
-- [1] make sure to store everyhting to disk appropriately -- e.g. interrupt shutdown or so?
-    -  use https://docs.python.org/3/library/atexit.html to deal with shutdowns
-- [2] Use this to open pdf of exam report https://stackoverflow.com/questions/434597/open-document-with-default-os-application-in-python-both-in-windows-and-mac-os
-- [1] support floats for points (e.g. 22.5)
+- [2] Use this to open pdf of generated exam report https://stackoverflow.com/questions/434597/open-document-with-default-os-application-in-python-both-in-windows-and-mac-os
+- [3] support floats for points (e.g. 22.5)
+    - python probably does that automatically?
 - [3] when adding new class, use categories from most recent class as template
-
-- [1] Replace Exam class by subclasses for different calculation types (linear, ...)
-- [1] Storing: Use Export to xlsx and store overview to json
-- [1] Restructure code: Categories don't have a list of exams, but instead a class has a list of exams
 - [3] maybe add date as a field for exam
 - [2] replace prints with logging, fix output of it
-- [2] make sure that pritns/logging follow the convention of "[WHO AM I] message"
-- [2] [EXAM] also accept grading system that goes form high to low
+- [2] make sure that prints/logging follow the convention of "[WHO AM I] message"
 - [2] [CATEGORY / EXAM] Deal with bonus grades (absolute bonus) -- done as exam / kept in category / ...
 - [ ] Exam: when the user enters points, it always has precedence over manually set grade.
 - [1] Exam: Don't truncate points achieved at max points, instead truncate grades over 6 (so teacher still sees that student was over max)
-- [2] Class: The compute_average_grade method could be improved to better deal with e.g. student missing exams (thus, weight does not sum to 1), bonus grades, ...
-- [2] allow other max grades consistenly, also outside exam environment
+- [1] Class: The compute_average_grade method could be improved to better deal with e.g. student missing exams (thus, weight does not sum to 1), bonus grades, voluntary exams, ...
+- [2] allow other max grades consistently, also outside exam environment
 
 ## FRONTEND / GUI
 
+- [1] Find a pleasant way to let user know of errors (don't just throw prompts around)
 - [] Find out how to do actions in PyQt
 - [2] sanitize user inputs everywhere
 - [2] add check that the user does not include too many categories (screws up loading / storing) -- cap at 15 or so
 - [1] support floats for points (e.g. 22.5)
-- [1] If user closes GUI window, only close current view (instead of entire program)
-- [3] add tutorial button on overview => or make thing intuitive
+- [3] add tutorial action on overview => or make thing intuitive
 - [3] allow pasting into gui-table from excel or so
 - [4] Find way to do "recent DBs" in menu bar
 - [1] make newest semester tab active during startup
@@ -71,19 +77,17 @@ categorization:
 - [1] class WindowExamDetail: dynamically adjust GUI based on Exam type chosen (with subclasses of Exam)
 - [2] add default values for a new class (default category "Voci-Exams", default exam "Voci 1", ...)
 - [2] add checks on each backend-function call to catch any exception.
-
+- [2] Add prompt that handles the import-from-excel (e.g. "do you want to first create a template" prompt or so)
 
 ## DISTRIBUTION
-
 - [] Try pyinstaller on Mac with small code example
 - [] Try to distribute the more realistic examples in every step
 - [] Try pyinstaller on windows
 - [] Write scripts to automate workflows on Mac / Windows / Linux
 - [] Take care of relative imports (they can apparently screw up things)
 
-
 ## NEW FEATURES
-- [2] make nice exam summaries
+- [1] make nice exam summaries
 - [4] do the thing securely, like encrypting exam data, ...
 - [4] Add functionality for restoring stuff from a .trash folder within program
     - remove trash functionality for now, it just litters the disk
@@ -91,18 +95,11 @@ categorization:
 - [3] add grading mode "curve fitting": instead of linear, say where the 4 is and where the 6 is
     - can also do that with arbitrary many grades; use linear interapolation for grades in between
     - use fancy interpolations because of reasons, alternatively
-- [3] add more generaical mode of "streichnote" -- allow cancelling 1, 2, 3, ... grades
-- [2] add cateogry mode "bonus" => e.g. max 0.25 noten bonus
 - [2] add pdf-report for semesternoten / grade report grades.
 - [3] Undo / Redo feature (google and / or store last performed action)
-
-
+- [3] [EXAM] also accept grading system that goes from high to low
 
 ## MISC
 - [2] test the shit out of the bugger
-- [1] Clean up project directory, mb redo all things starting from GUI
-- [1] Exclude "try outs" / tests for GUI stuff from this projects
 - [3] start "documentation" of workflows and project layout -- e.g., after calling method XY, class gets stored on disk automatically. After addign student, has to be invoked manually. Etc.
-- [3] Write tutorial / documentation for myself on how GUI shizzl works
-- [1] write short bash script to update all .py files from the respective .ui file
 

@@ -44,6 +44,97 @@ class Class:
         else:
             raise RuntimeError(f"[CLASS] Either choose HS or FS for term (got {term})")
 
+    ####################### FIELD MANIPULATIONS INTERFACE #######################
+
+    def update_name(self, new_name: str):
+        self.name = new_name
+
+    def change_category_of_exam(self, exam: Exam, new_category: BaseCategory):
+        """
+        Sets another category for the exam
+        :param exam: exam whose cateogry should be changed
+        :param new_category: new category for the exam
+        :return:
+        """
+
+        exam.change_category(new_category)
+        if not self.contains_category(new_category):
+            self.categories.append(new_category)
+
+    def add_multiple_students(self, students: list[tuple[str, str]]):
+        """
+        Adds students to class, based on received list of (Firstname, Lastname)
+        :param students:  list of (firstname, lastname)-tuples
+        :return: list of students that could not be added
+        """
+
+        # TODO callers need to check for list being empty
+
+        list_of_failed_students = []
+        for student_tuple in students:
+            firstname = student_tuple[0]
+            lastname = student_tuple[1]
+            try:
+                self.add_student(firstname, lastname)
+            except RuntimeError as e:
+                list_of_failed_students.append(student_tuple)
+
+        if len(list_of_failed_students) != 0:
+            logging.warning(f"[Class] Could not add the following students: {list_of_failed_students}")
+
+        return list_of_failed_students
+
+    def add_student(self, firstname, lastname):
+        """
+        Add single student (based on firstname / lastname) to class
+        :return:
+        :raises: RuntimeError if student is already in class
+        """
+        if self.contains_student(firstname, lastname):
+            raise RuntimeError(
+                f"[CLASS] Cannot add student {firstname} {lastname} a second time. Consider adding suffix (John Doe2)")
+        self.students.append(Student(firstname, lastname))
+
+
+    def delete_student(self, student: Student):
+        """
+        Deletion based on student object instead of name. Probably gonna use that function consitently #TODO
+        :param student:
+        :return:
+        """
+        if student in self.students:
+            self.students.remove(student)
+        else:
+            raise RuntimeError(f"Could not find student {student} in class {self}")
+
+    def delete_exam(self, exam: Exam):
+        """
+        Deletion based on object reference instead of name. Replace other funciton usages with delete instead of remove
+        :param exam:
+        :return:
+        """
+        if exam in self.exams:
+            self.exams.remove(exam)
+        else:
+            raise RuntimeError(f"Could not find exam {exam} in class {self}")
+
+    def delete_category(self, category: BaseCategory):
+        """
+        Removes the category from this class.
+        :param category:
+        :raises: RuntimeError if category is not known or there still are exams of that category.
+        """
+
+        if self.contains_category(category):
+            if self.number_exams_of_category(category) != 0:
+                raise RuntimeError(f"[CLASS] Cannot delete category. There are still {self.number_exams_of_category(category)} exams in my list of that category!")
+            self.categories.remove(category)
+        else:
+            raise RuntimeError(f"Could not find that category in the list {self.categories}")
+
+
+    ################# SMALL UTILITY ##################
+
     def __str__(self):
         return f"{self.name} {self.term.upper()}{self.year}"
 
@@ -51,13 +142,14 @@ class Class:
         return f"C-{self.name} {self.term.upper()}{self.year}"
 
     # FUNCTIONS TO ENABLE EASY SORTING
+
     def __le__(self, other):
         """
         Comparison based on year and term
         HS2020 -> FS2020 -> HS2021 -> ..
         Tie-breaker: alphanumerical order of name
         """
-        if self.term ==  other.term and self.year == other.year:
+        if self.term == other.term and self.year == other.year:
             return self.name <= other.name
         elif self.year == other.year:
             return self.term.lower() == "hs"
@@ -76,51 +168,6 @@ class Class:
         "Does NOT compare exams etc. ==> only used for sorting!!"
         return self.term == other.term and self.year == other.year and self.name == other.name
 
-    def update_name(self, new_name: str):
-        self.name = new_name
-
-    def update_semester(self, new_name=None):
-        """
-        Used to update this class to new semester: increment the semester/term values, give option for new name, return new class object
-
-        => does that function make sense in classes? it's probably easier in overview
-        :param new_name:
-        :return:
-        """
-
-        raise NotImplementedError
-
-        self.report_id = 0
-        oldterm = self.term
-        oldyear = self.year
-        if self.term == "hs":
-            self.year = self.year + 1
-            self.term = "fs"
-        else:
-            self.term = "hs"
-            if new_name == None:
-                logging.info("Consider updating the name of the class! It has likely changed, e.g. from 3a to 4a")
-                new_name = self.name
-            self.update_name(new_name)
-
-        logging.info(f"Updating term for class {self.name} from {oldterm} {oldyear} to {self.term} {self.year}")
-        logging.info(f"Removing old class list, updating with new classlist")
-        old_filename = self.filename_class
-        # TODO also make new files for class name, deleting the old ones
-        self.update_filenames()
-        os.remove(old_filename)
-        self.store_to_database()
-
-        # make new base folder for exams
-        if not os.path.exists(self.filename_base_exam):
-            os.makedirs(self.filename_base_exam)
-        else:
-            logging.error(f"Directory '{self.filename_base_exam}' already exists.")
-
-        # Reuse cateogries from previous semester, too.
-        old_categories = self.categories
-        self.categories = []
-        self.initialize_categories_from_old(old_categories)
 
     def number_exams(self):
         """
@@ -151,66 +198,56 @@ class Class:
 
         return len([exam for exam in self.exams if student in exam.grades])
 
-    def change_category_of_exam(self, exam: Exam, new_category: BaseCategory):
+    def number_categories(self):
+        return len(self.categories)
+
+
+
+    def contains_student(self, firstname, lastname):
         """
-        Sets another category for the exam
-        :param exam: exam whose cateogry should be changed
-        :param new_category: new category for the exam
-        :return:
+
+        :param firstname:
+        :param lastname:
+        :return: True iff a student with firstname / lastname is in self.students
         """
-        exam.change_category(new_category)
 
+        try:
+            self.get_student(firstname, lastname)
+        except RuntimeError as e:
+            return False
+        return True
 
+    def contains_category(self, category_name: str):
+        try:
+            self.get_category(category_name)
+        except RuntimeError as e:
+            return False
+        return True
 
+    def contains_exam(self, exam_name: str):
+        try:
+            self.get_exam(exam_name)
+        except RuntimeError as e:
+            return False
+        return True
 
-
-    def contains_student(self, first: str = "", last: str="", return_student=False):
+    def get_student(self, firstname, lastname):
         """
-        Slow and unelegant, but hey
-        Allows only searching for one of the names (surname or firstname), this is a little bit more convenient
-        :param return_student:  can let the function also return the Student object (used for deletion)
+        Find student object, based on either first or lastname (or both)
         :param first:
         :param last:
-        :return:
+        :return: Reference to Student object corresponding to the firstname / lastname combination
         """
 
-        # TODO rewrite in nice
+        if firstname == "" and lastname == "":
+            raise RuntimeError(f"[CLASS] Must give valid name to find student")
+        firstname = firstname.lower()
+        lastname = lastname.lower()
+        for student in self.students:
+            if student.firstname == firstname and student.lastname == lastname:
+                return student
 
-        if first == "" and last == "":
-            raise RuntimeError("Must give at least one name")
-        first = first.lower()
-        last = last.lower()
-        res = False
-        res_student = None
-        for students_contained in self.students:
-            if students_contained.firstname == first and students_contained.lastname == last:
-                res = True
-                res_student = students_contained
-            if first == None and students_contained.lastname == last:
-                res = True
-                res_student = students_contained
-            if first == students_contained.firstname and last == None:
-                res = True
-                res_student = students_contained
-
-        if return_student:
-            return res, res_student
-        return res
-
-
-    def get_student(self, first: str, last: str):
-        """
-        Really just a wrapper function for contains_student
-        :param first:
-        :param last:
-        :return:  Student object corresponding to the firstname / lastname combination
-        """
-
-        # TODO rewrite in nice
-        # also contains_student should call get_student, not vice versa (contains can check if get_student returns None
-
-        _, student = self.contains_student(first, last, return_student=True)
-        return student
+        raise RuntimeError(f"[CLASS] ould not find student {firstname} {lastname} in my list")
 
     def get_category(self, category_name: str):
         """
@@ -223,8 +260,7 @@ class Class:
             if cat.name == category_name:
                 return cat
 
-        # If not matching name was found at this time, exception
-        raise RuntimeError(f"No category {category_name} found in my list: \n {self.categories}")
+        raise RuntimeError(f"[CLASS] No category {category_name} found in my list: \n {self.categories}")
 
 
     def get_exam(self, exam_name: str):
@@ -238,138 +274,9 @@ class Class:
 
         raise RuntimeError(f"Could not find exam {exam_name} in list {self.exams}")
 
+    ################## IMPORTANT FUNCTIONALITY #####################
 
 
-
-    # TODO better name for this method
-    def initialize_new_class(self, students: list[dict[str, str]]):
-        """
-        creates new class from scratch and stores the data of the students as a csv.
-        :param students: list [("firstname": __, "lastname": ___)]
-        :return:
-        """
-        # TODO error checking, throw runtime error
-        some_check = True
-        if not some_check:
-            raise RuntimeError(f"Error initializing students, cannot parse list {students}")
-        for student in students:
-            if self.contains_student(student["firstname"], student["lastname"]):
-                print(f"Warning! Received the same student a second time! Won't add anything")
-                # TODO find some reasonable way to ping that back to GUI (do you really want to do that? or so)
-            else:
-                self.students.append(Student(student["firstname"], student["lastname"]))
-
-        # TODO not clear if I want to store at this point, too...might slow things down too much
-
-        # store the class as a csv
-        # => that function checks whether old file already exists
-        self.store_to_database()
-
-    def delete_class(self):
-        """
-        deltes class AND ALL ITS FILES
-        :return:
-        """
-
-        # TODO overview class will take care of that
-
-        raise NotImplementedError
-
-        # TODO could also just move it to the trash folder -- need to decide that later
-        logging.warning(f"Removing all the files for class {self.name} {self.term} {self.year}. This action cannot be reverted.")
-        os.remove(self.filename_class_base)
-
-        # put the old folder to the trash folder
-        shutil.move(self.filename_base_exam, f"{self.folder_shadow}{time.time() / 60}_{self.filename_class}")
-
-        # remove the folder containing this classes exam
-        for item in os.listdir(self.filename_base_exam):
-            item_path = os.path.join(self.filename_base_exam, item)
-            if os.path.isfile(item_path):
-                # if the item is a file, delete it
-                os.remove(item_path)
-            elif os.path.isdir(item_path):
-                # if the item is a directory, recursively delete it and all its contents
-                shutil.rmtree(item_path)
-
-
-    def add_student(self, first: str, last: str):
-        """
-        :return:
-        adds new student
-        IT'S THE CALLERS JOB TO STORE THE DATABASE, STORING AT EVERY STEP IS WAY TOO SLOW!
-
-        """
-        if self.contains_student(first, last):
-            logging.warning(f"Class already contains student {first.capitalize()} {last.capitalize()}, skipping")
-        else:
-            self.students.append(Student(first, last))
-
-    def delete_student(self, student: Student):
-        """
-        Deletion based on student object instead of name. Probably gonna use that function consitently #TODO
-        :param student:
-        :return:
-        """
-        if student in self.students:
-            self.students.remove(student)
-        else:
-            raise RuntimeError(f"Could not find student {student} in class {self}")
-
-    def delete_exam(self, exam: Exam):
-        """
-        Deletion based on object reference instead of name. Replace other funciton usages with delete instead of remove
-        :param exam:
-        :return:
-        """
-        if exam in self.exams:
-            self.exams.remove(exam)
-        else:
-            raise RuntimeError(f"Could not find exam {exam} in class {self}")
-
-    def delete_category(self, category: BaseCategory):
-        """
-        Deletion based on object reference instead of name. Replace other funciton usages with delete instead of remove
-        :param category: Category to be deleted
-        :return:
-        """
-        if category in self.categories:
-            self.categories.remove(category)
-        else:
-            raise RuntimeError(f"Could not find category {category} in the list {self.categories}")
-
-    def remove_student(self, first: str, last: str):
-        """
-        what to do with the grades???
-        IT'S THE CALLERS JOB TO STORE THE DATABASE, STORING AT EVERY STEP IS WAY TOO SLOW!
-        :param student:
-        :return:
-        """
-        b, student_in_db = self.contains_student(first, last, return_student=True)
-        if not b or student_in_db == None:
-            raise RuntimeWarning(f"Could not find student {first} {last} in my database. Did you mistype?")
-
-        self.students.remove(student_in_db)
-
-    def contains_category(self, name: str):
-        for cat in self.categories:
-            if cat.name == name:
-                return True
-        return False
-
-    def find_category(self, name: str):
-        for cat in self.categories:
-            if cat.name == name:
-                return cat
-
-        raise RuntimeError(f"Could not find that Category in the list {self.categories}")
-
-    def delete_category(self, cat: str):
-        if self.contains_category(cat):
-            category = self.find_category(cat)
-            self.categories.remove(category)
-        else:
-            raise RuntimeError(f"Could not find that category in the list {self.categories}")
 
     def add_category(self,
                      category_name: str,
@@ -383,6 +290,8 @@ class Class:
         :return:
         """
 
+        raise NotImplementedError
+
         type = category_type
         new_category = None
         if type == "default":
@@ -391,36 +300,10 @@ class Class:
             new_category = CategoryWithDroppedGrades(category_name, weight, number_drop_grades)
         elif type == "bonus":
             new_category = CategoryBonus(category_name, bonus_amount)
-        elif type == "voluntary":
-            new_category = CategoryOnlyIfImproves(category_name, weight)
+        else:
+            raise RuntimeError(f"[CLASS] Cannot create category of type {type}")
 
         self.categories.append(new_category)
-
-    def change_category(self, exam_name: str, new_cat: str):
-        """
-        Changes category of exam
-        :param exam:
-        :param new_cat:
-        :return:
-        """
-
-        # remove exam from list of its original category
-        exam = self.get_exam(exam_name)
-        old_cat = self.find_category(exam.category)
-        try:
-            old_cat.exams.remove(exam)
-        except:
-            raise RuntimeError(f"Could not find exam {exam} in category {old_cat}")
-
-        # add exam to exam list in new_cat
-        try:
-            new_cat = self.find_category(new_cat)
-        except:
-            logging.warning(f"Could not find category {new_cat}, creating it with weight 0. Change manually later on")
-            new_cat = self.add_category({"name": new_cat, "weight": 0})
-        new_cat.exams.append(exam)
-
-        exam.category = new_cat
 
 
 
@@ -445,9 +328,6 @@ class Class:
         :return:
 
         TODO make sure to support whacky characters in name
-        TODO store .csv file for that exam notes
-        TODO store csv with full names
-        TODO use special number like -1 to signify "don't count this exam" => what if category does not contain any exam for that studen?
         """
 
         # TODO sanitize user inputs
@@ -458,39 +338,6 @@ class Class:
         raise NotImplementedError
 
         # check if category is present:
-        category = None
-        for cat in self.categories:
-            if cat.name == exam_category:
-                category = cat
-                break
-        if category is None:
-            logging.warning(f"Did not find category. Creating new one. NEED TO SET WEIGHT MANUALLY!")
-            category = BaseCategory(exam_category, self.term, self.name, weight=0)
-            self.categories.append(category)
-
-        new_exam = category.add_exam(exam_name,
-                                     term=f"{self.term.upper()}_{self.year}",
-                                     classname=self.name,
-                                     max_points=max_points,
-                                     points_needed_for_6=points_needed_for_6,
-                                     min_grade=min_grade,
-                                     max_grade=max_grade,
-                                     achieved_points=achieved_points,
-                                     achieved_grades=achieved_grades,
-                                     computation_mode=computation_mode)
-
-        # computing grades
-        new_exam.compute_grades()
-        # for cat in self.categories:
-        #     for exam in cat.exams:
-        #         # print(f"Calling compute_grades on {exam}")
-        #         if exam.grades != None:
-        #             exam.compute_grades()
-        #         else:
-        #             logging.warning(f"Cannot compute grades for {exam}; exam.grades is None")
-
-        # making sure to store that exam in Excel file
-        self.store_exams()
 
 
 
@@ -504,7 +351,7 @@ class Class:
         """
         TODO Issues with this function:
         - Very unelegant solution
-        - Non-obligatory grades don't work that way
+        - Take voluntary flag into consideration for the computation of the grade
         - Find better solution for weight != 1
         """
 
@@ -572,7 +419,13 @@ class Class:
                 # mark missing average grade for those students
                 self.average_grades[student] = -1
 
-
+    def export_grade_report(self, filepath = ""):
+        """
+        Merge the old functions here
+        :param filepath:
+        :return:
+        """
+        raise NotImplementedError
 
     def export_class_overview(self, filetype="xlsx", filepath=""):
         """

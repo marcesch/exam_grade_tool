@@ -35,7 +35,6 @@ class BaseCategory:
         self.name = name
 
 
-
     def __str__(self):
         return f"{self.name}"
 
@@ -49,42 +48,8 @@ class BaseCategory:
         :return:
         """
 
-        # subclasses must implement this
-
-
-    def aggregate_grades(self, student: Student, grades: list[dict[Student, float]]):
-        """
-        aggregates the final grade for all exams. Usually simply average, but support other types (based on self.grading_tpe)
-        :param exams_to_be_counted:  list for all exams that should be counted for a given student
-        :return:
-        """
-
-        # TODO change that function to work with new layout (maybe receive list of grades from the exam objects, to avoid circular imports)
-
-        # TODO what to do when students are not in all exams etc.
-        # => I think caller takes care of it
-
+        # ensure that subclasses implement this
         raise NotImplementedError
-
-        if self.grading_type == "default":
-            sum = 0
-            for exam in exams_to_be_counted:
-                sum = sum + exam.grades[student]
-            return sum / len(exams_to_be_counted)
-        elif self.grading_type == "streichnote":
-            # cancels the worst result
-            if len(exams_to_be_counted) == 1:
-                return exams_to_be_counted[0]
-            min = -1
-            sum = 0
-            for exam in exams_to_be_counted:
-                sum = sum + exam.grades[student]
-                if min == -1 or min > exam.grades[student]:
-                    min = exam.grades[student]
-            return (sum-min) / (len(exams_to_be_counted)-1)
-
-        else:
-            raise NotImplementedError
 
 
 class CategoryDefault(BaseCategory):
@@ -127,17 +92,6 @@ class CategoryWithDroppedGrades(CategoryDefault):
 
         raise NotImplementedError
 
-class CategoryOnlyIfImproves(BaseCategory):
-    def __init__(self, name: str, weight: float):
-        """
-        Exam results from this category should only count if it improves the grade.
-
-        TODO might make more sense as an exam-tag instead of a separate category
-
-        :param name:
-        :param weight:
-        """
-        raise NotImplementedError
 
 class CategoryBonus(BaseCategory):
     # TODO might do that as an exam without a category

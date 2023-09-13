@@ -9,10 +9,9 @@ import openpyxl
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 
 
-from backend.exam import Exam, Student
+from backend.exam import *
 from backend.classes import Class
-# from student import Student
-from backend.category import Category
+from backend.category import *
 
 
 
@@ -51,6 +50,9 @@ class Overview:
         Open other database (also change config)
         :return:
         """
+
+        # TODO highly unlikely this is done this way
+        raise NotImplementedError
         self.folderpath = path
         # TODO do also for all stored classes (change their base folder)
 
@@ -61,11 +63,18 @@ class Overview:
         :return:
         """
 
+        raise NotImplementedError
+
+
     def store_to_db(self):
         """
         Store config and DB
         :return:
         """
+
+        # TODO rename (e.g. save_to_disk), maybe split save_config separately (to be called whenever a change occurs)
+
+        raise NotImplementedError
 
         # TODO store config files, see TODO
 
@@ -87,12 +96,13 @@ class Overview:
                 return class_obj
         raise RuntimeError(f"Did not find any class matching {name} {term} {year}")
 
-    def fetch_classes(self, term, year):
+    def get_all_classes_of_period(self, term, year):
         """
         :param term:
         :param year:
         :return: a list of classes matching the term / year
         """
+
         res = []
         for class_obj in self.classes:
             if (class_obj.term == term) and (class_obj.year == int(year)):
@@ -149,6 +159,9 @@ class Overview:
         :param year:
         :return:
         """
+
+        raise NotImplementedError
+
         class_obj = Class(name, term, year)
         if not students is None:
             try:
@@ -281,6 +294,7 @@ class Overview:
         """
 
         # TODO this will change with json pickle
+        raise NotImplementedError
 
         # Loop through all files in the directory
         print(f"Looking at {self.folderpath}")
@@ -334,3 +348,59 @@ class Overview:
         # also sort the terms list for easier use
         # TODO maybe i fucked up the sorting
         self.terms.sort()
+
+    def store_config(self):
+        raise NotImplementedError
+
+    def load_config(self):
+        raise NotImplementedError
+
+    def store_user_data(self):
+        """
+        Stores all entered user data to disk
+        :return:
+        """
+        raise NotImplementedError
+
+    def load_all_data(self):
+        """
+        After setting working directory, load all found data
+        :return:
+        """
+        raise NotImplementedError
+
+    def load_classes(self):
+        """
+        Find all classes
+        :return:
+        """
+        raise NotImplementedError
+
+    def load_class_data(self):
+        """
+        Load data for single class
+        :return:
+        """
+        raise NotImplementedError
+
+    def import_class_data(self):
+        """
+        Allow import from xlsx template
+        :return:
+        """
+        raise NotImplementedError
+
+    def create_import_template(self):
+        """
+        Create template that can be filled in by user to initialize class
+        :return:
+        """
+        raise NotImplementedError
+
+    def update_semester(self, class_obj: Class):
+        """
+        Updates a class to the new semester by initializing a new class object with the same categories, students, new name, ...
+        :param class_obj:
+        :return:
+        """
+        raise NotImplementedError

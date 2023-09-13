@@ -127,20 +127,6 @@
               </property>
              </widget>
             </item>
-            <item>
-             <widget class="QPushButton" name="button_changeLocation">
-              <property name="text">
-               <string>Change Location of DB</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="button_openDB">
-              <property name="text">
-               <string>Open Database</string>
-              </property>
-             </widget>
-            </item>
            </layout>
           </item>
          </layout>
@@ -180,21 +166,9 @@
     <property name="title">
      <string>File</string>
     </property>
-    <widget class="QMenu" name="menuRecent_Databases">
-     <property name="title">
-      <string>Recent Databases</string>
-     </property>
-     <addaction name="actionOption_1"/>
-    </widget>
-    <addaction name="action_newDB"/>
-    <addaction name="action_openDB"/>
-    <addaction name="menuRecent_Databases"/>
-    <addaction name="action_changeLocation"/>
-    <addaction name="separator"/>
     <addaction name="action_save"/>
+    <addaction name="actionImport_From_Excel"/>
     <addaction name="separator"/>
-    <addaction name="action_restoreData"/>
-    <addaction name="action_cleanTrash"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
     <property name="title">
@@ -286,6 +260,11 @@
   <action name="action_cleanTrash">
    <property name="text">
     <string>Clean Trash</string>
+   </property>
+  </action>
+  <action name="actionImport_From_Excel">
+   <property name="text">
+    <string>Import From Excel</string>
    </property>
   </action>
  </widget>
