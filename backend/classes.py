@@ -133,6 +133,32 @@ class Class:
             raise RuntimeError(f"Could not find that category in the list {self.categories}")
 
 
+    def add_category(self,
+                     category_name: str,
+                     category_type: str,
+                     weight: float = 0,
+                     bonus_amount: float = 0,
+                     number_drop_grades: int = 0):
+        """
+        Add category. Based on the key "type", the exact type of the category should be distinguished (e.g. CategoryDefault, ..)
+        :param category_description: dictionary containing the necessary fields to create category.
+        :return:
+        """
+
+        type = category_type
+        new_category = None
+        if type == "default":
+            new_category = CategoryDefault(category_name, weight)
+        elif type == "drop_grade":
+            new_category = CategoryWithDroppedGrades(category_name, weight, number_drop_grades)
+        elif type == "bonus":
+            new_category = CategoryBonus(category_name, bonus_amount)
+        else:
+            raise RuntimeError(f"[CLASS] Cannot create category of type {type}")
+
+        self.categories.append(new_category)
+
+
     ################# SMALL UTILITY ##################
 
     def __str__(self):
@@ -182,12 +208,8 @@ class Class:
         :return:
         """
 
-        counter = 0
-        for exam in self.exams:
-            if exam.category == category:
-                counter += 1
+        return len(self.get_exams_of_category(category))
 
-        return counter
 
     def number_exams_for_student(self, student: Student):
         """
@@ -196,11 +218,10 @@ class Class:
         :return:
         """
 
-        return len([exam for exam in self.exams if student in exam.grades])
+        return len(self.get_exams_for_student())
 
     def number_categories(self):
         return len(self.categories)
-
 
 
     def contains_student(self, firstname, lastname):
@@ -274,42 +295,122 @@ class Class:
 
         raise RuntimeError(f"Could not find exam {exam_name} in list {self.exams}")
 
-    ################## IMPORTANT FUNCTIONALITY #####################
-
-
-
-    def add_category(self,
-                     category_name: str,
-                     category_type: str,
-                     weight: float = 0,
-                     bonus_amount: float = 0,
-                     number_drop_grades: int = 0):
+    def get_exams_of_category(self, category: BaseCategory):
         """
-        Add category. Based on the key "type", the exact type of the category should be distinguished (e.g. CategoryDefault, ..)
-        :param category_description: dictionary containing the necessary fields to create category.
+        Returns list of all exams of a given category
+        :param category:
         :return:
         """
 
-        raise NotImplementedError
+        exams = []
+        for exam in self.exams:
+            if exam.category == category:
+                exams.append(exam)
 
-        type = category_type
-        new_category = None
-        if type == "default":
-            new_category = CategoryDefault(category_name, weight)
-        elif type == "drop_grade":
-            new_category = CategoryWithDroppedGrades(category_name, weight, number_drop_grades)
-        elif type == "bonus":
-            new_category = CategoryBonus(category_name, bonus_amount)
-        else:
-            raise RuntimeError(f"[CLASS] Cannot create category of type {type}")
+        return exams
 
-        self.categories.append(new_category)
+    def get_exams_for_student(self, student: Student):
+        """
+        Returns list of exams that the student was part of
+        :param student:
+        :return:
+        """
 
+        return [exam for exam in self.exams if student in exam.grades]
+
+
+    ################## IMPORTANT FUNCTIONALITY #####################
+
+
+    def add_exam(self,
+                 exam_name: str,
+                 category: BaseCategory,
+                 type: str="default",
+                 additional_args={}
+                 ):
+        """
+        Provides functionality to add exams to this class
+        :param exam_name: Name of exam
+        :param category: Under which category this exam should be put
+        :param type: Type of the exam (see Exam class)
+        :param additional_args: used to initialize different kinds of exams
+        :return: reference to newly created object
+        """
+
+        if self.contains_exam(exam_name):
+            raise RuntimeError(f"[CLASS] Can not create exam {exam_name}: There is an exam with that name")
+
+        if not category in self.categories:
+            self.categories.append(category)
+
+        if type == "linear" or type == "default":
+            # create Exam mode linear
+            try:
+                # unpack things from additional args
+                max_points = additional_args["max_points"]
+                # create exam object, potentially with non-required args
+
+                # TODO continue here
+                # => how to deal with non-required arguments?
+                # a) simply set defaults a second time, but that's pretty messy
+                # b) hardcode all combinations of cases
+
+                point_for_max = 0
+                if "points_for_max" not in additional_args:
+                    logging.warning(f"[CLASS] Did not receive point_for_max argument. Defaulting to max points")
+                    point_for_max = max_points
+                else:
+                    point_for_max =additional_args["points_for_max"]
+
+
+                exam_obj = ExamModeLinear(exam_name,
+                                          self.term,
+                                          self.year,
+                                          self.name,
+                                          category,
+                                          max_points,
+                                          point_for_max,
+                                          additional_args)
+
+                self.exams.append(exam_obj)
+                return exam_obj
+
+            except KeyError as e:
+                raise RuntimeError(f"[CLASS] Could not unpack arguments for this exam type: \n {e.__str__()}")
+
+        elif type == "linear_with_pass":
+            try:
+                max_points = additional_args["max_points"]
+                points_for_pass = additional_args["points_for_pass"]
+                points_for_max = 0
+
+                if "points_for_max" not in additional_args:
+                    logging.warning(f"[CLASS] Did not receive point_for_max argument. Defaulting to max points")
+                    point_for_max = max_points
+                else:
+                    point_for_max = additional_args["points_for_max"]
+
+                exam_obj = ExamModeLinearWithPassingPoints(exam_name,
+                                                           self.term,
+                                                           self.year,
+                                                           self.name,
+                                                           category,
+                                                           max_points,
+                                                           points_for_max,
+                                                           points_for_pass,
+                                                           additional_args)
+            except KeyError as e:
+                raise RuntimeError(f"[CLASS] Could not unpack arguments for this exam type: \n {e.__str__()}")
+
+        elif type == "fixed_point_scheme":
+            raise  NotImplementedError
+        elif type == "manually":
+            raise NotImplementedError
 
 
 
     def add_exam(self, exam_name: str,
-                 exam_category: str,
+                 category_name: str,
                  max_points: int,
                  points_needed_for_6: int = None,
                  min_grade=1,
@@ -330,15 +431,31 @@ class Class:
         TODO make sure to support whacky characters in name
         """
 
-        # TODO sanitize user inputs
-        # TODO make sure that exam names are unique
+        if self.contains_exam(exam_name):
+            raise RuntimeError(f"[CLASS] Could not create exam with name {exam_name} since this name is already present. Use a different name")
 
-        # TODO use an exam object here instead of the other whacky shit. Also, use subclasses to deal with different grading strategies
+        category = None
+        if self.contains_category(category_name):
+            category = self.get_category(category_name)
+        else:
+            logging.info(f"[CLASS] Don't know that category {category_name}, creating new one. Set weight manually!")
+            category = CategoryDefault(category_name, 0)
+
+
 
         raise NotImplementedError
 
         # check if category is present:
 
+    def edit_category(self, category: BaseCategory, properties):
+        """
+        Allows altering the category type, properties, ...
+        :param category:
+        :param properties: dict containing necessary information to alter category.
+        :return:
+        """
+        # TODO make sure to change all exams of that category accordingly
+        raise NotImplementedError
 
 
     def compute_average_grade_student(self, student: Student):

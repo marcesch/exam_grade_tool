@@ -58,6 +58,7 @@ categorization:
 
 ## FRONTEND / GUI
 
+- [1] In window overview: use tabs for the 3 things: Tab1 = Exams, tab2 = Categories, tab3 = students (or stud, exam, cat; but make exams default active)
 - [1] Find a pleasant way to let user know of errors (don't just throw prompts around)
 - [] Find out how to do actions in PyQt
 - [2] sanitize user inputs everywhere

@@ -13,6 +13,7 @@ class Exam:
     def __init__(self,
                  name: str,
                  term: str,
+                 year: int,
                  classname: str,
                  category: BaseCategory,
                  min_grade: float,
@@ -20,8 +21,8 @@ class Exam:
                  voluntary: bool,
                  grades: dict[Student, float]):
         self.name = name
-        # term = hs23 etc.
         self.term = term.lower()
+        self.year = year
         self.class_obj: str = classname
         self.category: BaseCategory = category
         if min_grade > max_grade:
@@ -201,15 +202,18 @@ class ExamModeLinear(Exam):
     def __init__(self,
                  name: str,
                  term: str,
+                 year: int,
                  classname: str,
                  category: BaseCategory,
                  max_points: float,
                  points_for_max: float,
-                 min_grade: int=1,
-                 max_grade: int=6,
-                 voluntary: bool = False,
-                 points: dict[Student, float] = {},
-                 grades: dict[Student, float] = {}):
+                 additional_args: dict = {}
+                 # min_grade: int=1,
+                 # max_grade: int=6,
+                 # voluntary: bool = False,
+                 # points: dict[Student, float] = {},
+                 # grades: dict[Student, float] = {}
+                 ):
         """
         Subclass of Exam dealing with a standard linear fitting mode (achieved_pts/max_pts * 5 + 1)
         :param name: exam name, passed to parent
@@ -224,8 +228,15 @@ class ExamModeLinear(Exam):
         :param grades: manually overwrite computed grades with present grades
         """
 
+        min_grade = additional_args["min_grade"] if "min_grade" in additional_args else 1
+        max_grade = additional_args["max_grade"] if "max_grade" in additional_args else 6
+        passing_grade = additional_args["passing_grade"] if "passing_grade" in additional_args else 4
+        voluntary = additional_args["voluntary"] if "voluntary" in additional_args else False
+        points = additional_args["points"] if "points" in additional_args else {}
+        grades = additional_args["grades"] if "grades" in additional_args else {}
 
-        super().__init__(name, term, classname, category, min_grade, max_grade, voluntary, grades)
+
+        super().__init__(name, term, year, classname, category, min_grade, max_grade, voluntary, grades)
 
         # define fields specifically for this class
         self.max_points = max_points
@@ -320,13 +331,25 @@ class ExamModeSetGradeManually(Exam):
     def __init__(self,
                  name: str,
                  term: str,
+                 year: int,
                  classname: str,
                  category: BaseCategory,
-                 min_grade: int = 1,
-                 max_grade=6,
-                 voluntary=False,
-                 grades: dict[Student, float] = {}):
-        super().__init__(self, name, term, classname, category, min_grade, max_grade, voluntary, grades)
+                 additional_args = {}
+                 # min_grade: int = 1,
+                 # max_grade=6,
+                 # voluntary=False,
+                 # grades: dict[Student, float] = {}
+    ):
+
+
+        min_grade = additional_args["min_grade"] if "min_grade" in additional_args else 1
+        max_grade = additional_args["max_grade"] if "max_grade" in additional_args else 6
+        voluntary = additional_args["voluntary"] if "voluntary" in additional_args else False
+        grades = additional_args["grades"] if "grades" in additional_args else {}
+
+
+
+        super().__init__(self, name, term, year, classname, category, min_grade, max_grade, voluntary, grades)
 
     ####################### FIELD MANIPULATIONS INTERFACE #######################
 
@@ -359,17 +382,20 @@ class ExamModeLinearWithPassingPoints(ExamModeLinear):
     def __init__(self,
                  name: str,
                  term: str,
+                 year: int,
                  classname: str,
                  category: BaseCategory,
                  max_points: float,
                  points_for_max: float,
                  points_for_pass: float,
-                 min_grade: float=1,
-                 passing_grade: float=4,
-                 max_grade: float=6,
-                 volutary: bool=False,
-                 points: dict[Student, float] = {},
-                 grades: dict[Student, float] = {}):
+                 additional_args: dict = {},
+                 # min_grade: float=1,
+                 # passing_grade: float=4,
+                 # max_grade: float=6,
+                 # volutary: bool=False,
+                 # points: dict[Student, float] = {},
+                 # grades: dict[Student, float] = {}
+                 ):
         """
         Allows setting a cutoff for passing grade (allowing the teacher to adjust the resulting grades more for difficult exams)
         :param points_for_max: points for maximal grade
@@ -377,12 +403,22 @@ class ExamModeLinearWithPassingPoints(ExamModeLinear):
         :param min_grade: minimum grade, 1 in Switzerland
         :param passing_grade: passing grade, 4 in Switzerland
         :param max_grade: max grade, 6 in Switzerland
+        :param additional_args: dictionary with the additional arguments for this function (used by caller for more elegant code)
         """
 
-        self.passing_grade = passing_grade
         self.points_for_pass = points_for_pass
         if points_for_pass > points_for_max:
             raise RuntimeError(f"Passing points cannot be higher than points for max")
+
+
+        # unpack additional arguments
+        min_grade = additional_args["min_grade"] if "min_grade" in additional_args else 1
+        max_grade = additional_args["max_grade"] if "max_grade" in additional_args else 6
+        passing_grade = additional_args["passing_grade"] if "passing_grade" in additional_args else 4
+        voluntary = additional_args["voluntary"] if "voluntary" in additional_args else False
+        points = additional_args["points"] if "points" in additional_args else {}
+        grades = additional_args["grades"] if "grades" in additional_args else {}
+
 
         if not (min_grade <= passing_grade <= max_grade):
             raise RuntimeError(f"Passing grade must be in between minimum possible and maximum possible")
@@ -390,9 +426,9 @@ class ExamModeLinearWithPassingPoints(ExamModeLinear):
             raise RuntimeError(
                 f"Points needed for max grade ({points_for_max}) cannot be higher than maximum possible points ({max_points})")
 
-
-        super().__init__(name, term, classname, category, max_points, points_for_max,
-                 min_grade, max_grade, volutary, points, grades)
+        self.passing_grade = passing_grade
+        super().__init__(name, term, year, classname, category, max_points, points_for_max,
+                 min_grade, max_grade, voluntary, points, grades)
 
 
     ####################### FIELD MANIPULATIONS INTERFACE #######################
@@ -456,20 +492,30 @@ class ExamModeFixedPointScheme(Exam):
     def __init__(self,
                 name: str,
                 term: str,
+                year: int,
                 classname: str,
                 category: BaseCategory,
                 mapping_points_grades: dict[float, float],
-                min_grade: float = 1,
-                max_grade: float = 6,
-                voluntary: bool = False,
-                points: dict[Student, float] = {},
-                grades: dict[Student, float] = {}):
+                additional_args: dict = {}
+                # min_grade: float = 1,
+                # max_grade: float = 6,
+                # voluntary: bool = False,
+                # points: dict[Student, float] = {},
+                # grades: dict[Student, float] = {}
+                 ):
         """
         Allows to set a fixed point-to-grade mapping (with x points, you get grade y)
         :param mapping_points_grades: dictionary with table point x gets grade y
         :param points:
         :param grades:
         """
+
+        min_grade = additional_args["min_grade"] if "min_grade" in additional_args else 1
+        max_grade = additional_args["max_grade"] if "max_grade" in additional_args else 6
+        voluntary = additional_args["voluntary"] if "voluntary" in additional_args else False
+        points = additional_args["points"] if "points" in additional_args else {}
+        grades = additional_args["grades"] if "grades" in additional_args else {}
+
 
         self.mapping_points_grades = mapping_points_grades
         self.points = points
@@ -479,7 +525,7 @@ class ExamModeFixedPointScheme(Exam):
             self.points[student] = -1
 
 
-        super().__init__(name, term, classname, category, min_grade, max_grade, voluntary, grades)
+        super().__init__(name, term, year, classname, category, min_grade, max_grade, voluntary, grades)
 
         # TODO complete
         raise NotImplementedError
