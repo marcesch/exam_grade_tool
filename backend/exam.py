@@ -254,7 +254,7 @@ class ExamModeLinear(Exam):
 
     ####################### FIELD MANIPULATIONS INTERFACE #######################
 
-    def add_points(self, points: dict[Student, int]):
+    def add_points(self, points: dict[Student, float]):
         """
         Add points after initialization. Points entered take precendece over manually entered grades.
         :param points:
@@ -347,9 +347,7 @@ class ExamModeSetGradeManually(Exam):
         voluntary = additional_args["voluntary"] if "voluntary" in additional_args else False
         grades = additional_args["grades"] if "grades" in additional_args else {}
 
-
-
-        super().__init__(self, name, term, year, classname, category, min_grade, max_grade, voluntary, grades)
+        super().__init__(name, term, year, classname, category, min_grade, max_grade, voluntary, grades)
 
     ####################### FIELD MANIPULATIONS INTERFACE #######################
 

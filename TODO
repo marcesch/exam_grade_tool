@@ -103,4 +103,4 @@ categorization:
 ## MISC
 - [2] test the shit out of the bugger
 - [3] start "documentation" of workflows and project layout -- e.g., after calling method XY, class gets stored on disk automatically. After addign student, has to be invoked manually. Etc.
-
+- [1] Make sure to deanomymize testcases properly (remove real names of my class etc.)

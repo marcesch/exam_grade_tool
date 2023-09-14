@@ -399,53 +399,26 @@ class Class:
                                                            points_for_max,
                                                            points_for_pass,
                                                            additional_args)
+                self.exams.append(exam_obj)
+                return exam_obj
             except KeyError as e:
                 raise RuntimeError(f"[CLASS] Could not unpack arguments for this exam type: \n {e.__str__()}")
 
         elif type == "fixed_point_scheme":
             raise  NotImplementedError
-        elif type == "manually":
+        elif type == "manually" or "direct_grade":
+
+            # TODO take care of additional arguments more thoroughly, but I need this to run for testing...
+
+            exam_obj = ExamModeSetGradeManually(exam_name, self.term, self.year, self.name, category, additional_args)
+            self.exams.append(exam_obj)
+            return exam_obj
+
             raise NotImplementedError
-
-
-
-    def add_exam(self, exam_name: str,
-                 category_name: str,
-                 max_points: int,
-                 points_needed_for_6: int = None,
-                 min_grade=1,
-                 max_grade=6,
-                 achieved_points = None,
-                 achieved_grades = None,
-                 computation_mode="linear"):
-        """
-
-        :param exam_name: e.g. Redaction 1
-        :param exam_category: e.g. redaction, orale, ...
-        :param max_points: maximum possible points
-        :param points_needed_for_6:
-        :param min_grade:
-        :param max_grade:
-        :return:
-
-        TODO make sure to support whacky characters in name
-        """
-
-        if self.contains_exam(exam_name):
-            raise RuntimeError(f"[CLASS] Could not create exam with name {exam_name} since this name is already present. Use a different name")
-
-        category = None
-        if self.contains_category(category_name):
-            category = self.get_category(category_name)
         else:
-            logging.info(f"[CLASS] Don't know that category {category_name}, creating new one. Set weight manually!")
-            category = CategoryDefault(category_name, 0)
+            raise RuntimeError(f"[CLASS] Don't know that exam type")
 
 
-
-        raise NotImplementedError
-
-        # check if category is present:
 
     def edit_category(self, category: BaseCategory, properties):
         """
@@ -472,7 +445,14 @@ class Class:
         - Find better solution for weight != 1
         """
 
+        # TODO there are bugs here -- simply rewrite everything, it's super ugly anyway
+
+        raise NotImplementedError
+
+
         grades_per_cat: dict[BaseCategory, list[float]] = {}
+        for category in self.categories:
+            grades_per_cat[category] = []
         all_present_categories = []
         for exam in self.exams:
             if exam.category not in all_present_categories:
@@ -480,15 +460,17 @@ class Class:
             if student in exam.grades.keys():
                 grades_per_cat[exam.category].append(exam.grades[student])
 
+
         # TODO will fail with bonus grades, find better solution
-        if len(all_present_categories) != grades_per_cat:
-            raise RuntimeWarning(f"Student did not write exams in all categories")
+        if len(all_present_categories) != len(grades_per_cat):
+            raise RuntimeWarning(f"[CLASS] Student did not write exams in all categories:\n Amount written: {len(all_present_categories)}, all categories: {len(grades_per_cat)}")
 
 
         sum_weights = 0
         weighted_cats = []
+        results_per_cat = {}
         for category in grades_per_cat:
-            category.aggregate_grades(grades_per_cat[category])
+            results_per_cat[category] = category.aggregate_grades(grades_per_cat[category])
             # not all categories have a weight
             try:
                 weighted_cats.append(category)
@@ -509,7 +491,7 @@ class Class:
         # get grade based on all weighted categories
         grade = 0
         for category in weighted_cats:
-            grade += scaling_factor * category.weight * grades_per_cat[category]
+            grade += scaling_factor * category.weight * results_per_cat[category]
 
 
         # take bonus into account

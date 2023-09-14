@@ -45,42 +45,23 @@ class Overview:
         self.folderpath = FOLDERPATH
         self.terms = []
 
-    def open_other_db(self, path):
-        """
-        Open other database (also change config)
-        :return:
-        """
 
-        # TODO highly unlikely this is done this way
-        raise NotImplementedError
-        self.folderpath = path
-        # TODO do also for all stored classes (change their base folder)
-
-    def change_db_location(self, path):
-        """
-        Stores DB at new location (moves all data, new location in config, ...)
-        :param path:
-        :return:
-        """
-
-        raise NotImplementedError
-
-
-    def store_to_db(self):
+    def save_to_disk(self):
         """
         Store config and DB
         :return:
         """
 
         # TODO rename (e.g. save_to_disk), maybe split save_config separately (to be called whenever a change occurs)
+        # TODO store config files, see TODO
+
+        # # TODO use predetermined location (e.g. in ~/.application/...
 
         raise NotImplementedError
 
-        # TODO store config files, see TODO
 
-        for class_obj in self.classes:
-            class_obj.store_exams()
-            class_obj.store_to_database()
+    def save_config(self):
+        raise NotImplementedError
 
     def get_class(self, name, year, term):
         """

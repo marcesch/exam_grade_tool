@@ -1,4 +1,6 @@
 import logging
+from statistics import mean
+
 import numpy as np
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -45,7 +47,7 @@ class BaseCategory:
         """
         Compute the resulting grade for this category from the given list
         :param list_of_grades: list of exam data
-        :return:
+        :return: dict[Student, float] of resulting grades
         """
 
         # ensure that subclasses implement this
@@ -59,15 +61,29 @@ class CategoryDefault(BaseCategory):
         :param name: E.g. Voci
         :param weight: How much the category should weight in comparison to other categories
         """
-        raise NotImplementedError
+        self.name = name,
+        self.weight = weight
 
-    def aggregate_grades(self, list_of_grades: list[dict[Student,float]]):
+    def aggregate_grades(self, list_of_grades: list[float]):
         """
 
-        :param list_of_grades:
-        :return:
+        :param list_of_grades: dict[Student,list[float]]
+        :return: list of aggregated (basically: averaged based on category strategy) grades
         """
-        raise NotImplementedError
+
+        # TODO insert checks (list not being empty, ...)
+
+        if not isinstance(list_of_grades, list):
+            raise RuntimeError(
+                f"[CATEGORY] Expected list[float], but got {type(list_of_grades)}] instead.")
+
+        resulting_grades: dict[Student, float] = {}
+        for student in list_of_grades:
+            # compute average
+                resulting_grade = sum(list_of_grades) / len(list_of_grades)
+
+        return resulting_grade
+
 
 class CategoryWithDroppedGrades(CategoryDefault):
     def __init__(self, name: str, weight: float, number_drop_grades: int=1):
