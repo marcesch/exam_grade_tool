@@ -4,7 +4,7 @@ import logging
 import os
 
 import openpyxl
-
+from appdirs import *
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 
@@ -12,6 +12,7 @@ import openpyxl
 from backend.exam import *
 from backend.classes import Class
 from backend.category import *
+import jsonpickle
 
 
 
@@ -35,29 +36,55 @@ TODO add fucntionality to create exam summary as a PDF or so (average, mean, qua
 FOLDERPATH = "/home/marcesch/noten/tmp/klassen/"
 
 class Overview:
-    """
-    keep list of classes, ...
-
-    """
 
     def __init__(self):
         self.classes = []
-        self.folderpath = FOLDERPATH
         self.terms = []
 
+        # appdirs takes care of cross-plattform user data storage in according location
+        self.application_name = "grade_calculator"
+        self.author = "ch.marcesch"
+        self.application_folder = user_data_dir(self.application_name, self.author, roaming=False)
+        self.config_folder = user_config_dir(self.application_name)
 
-    def save_to_disk(self):
-        """
-        Store config and DB
-        :return:
-        """
+    def save_to_json(self, filename="overview_classes.json"):
+        # Combine the provided filename with the application data directory
+        file_path = os.path.join(self.application_folder, filename)
 
-        # TODO rename (e.g. save_to_disk), maybe split save_config separately (to be called whenever a change occurs)
-        # TODO store config files, see TODO
+        # Serialize the Overview object to a JSON string using jsonpickle
+        json_data = jsonpickle.encode(self)
 
-        # # TODO use predetermined location (e.g. in ~/.application/...
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
-        raise NotImplementedError
+        # Write the JSON data to the specified file
+        with open(file_path, 'w') as json_file:
+            json_file.write(json_data)
+
+    @staticmethod
+    def load_from_json(filename="overview_classes.json"):
+        print(f"=====> Filename {filename}")
+
+        # Combine the provided filename with the application data directory
+        application_folder = user_data_dir("grade_calculator", "ch.marcesch", roaming=False)
+        file_path = os.path.join(application_folder, filename)
+
+        print(f"[OVERVIEW] Loading data from {file_path}")
+
+        # Read the JSON data from the file
+        with open(file_path, 'r') as json_file:
+            json_data = json_file.read()
+
+        print(f"[OVERVIEW] Found the following data: \n{json_data}")
+
+        # Deserialize the JSON data using jsonpickle and create an Overview object
+        overview = jsonpickle.decode(json_data)
+        print(f"[OVERVIEW] After deserialization: \n {overview} \n{overview.classes} ")
+
+        print(f"Created class {overview.classes[0]} with students\n {overview.classes[0].students}")
+        print(f"Points for exam {overview.classes[0].exams[0]}: {overview.classes[0].exams[0].points}")
+        print(f"Grades for exam {overview.classes[0].exams[0]}: {overview.classes[0].exams[0].grades}")
+
+        return overview
 
 
     def save_config(self):
@@ -119,20 +146,16 @@ class Overview:
         """
         Delete the class object, including all data!
         :param class_obj:
-        :return:
+        :return: False if failure to delete
         """
-
-        # TODO delete from disk, ...
-        raise NotImplementedError
 
         if class_obj in self.classes:
             self.classes.remove(class_obj)
         else:
-            raise RuntimeError(f"Class {class_obj} is not stored in overview!")
-        # TODO check what the delete_class function does
-        # class_obj.delete_class()
+            return False
 
-    def add_class(self, name, term, year, students = None):
+
+    def add_class(self, name, term, year):
         """
         Add a class object to the overview
         :param name: class name (e.g. 6a)
@@ -141,21 +164,35 @@ class Overview:
         :return:
         """
 
-        raise NotImplementedError
+        for class_obj in self.classes:
+            if class_obj.name.lower() == name.lower() and class_obj.term.lower() == term.lower() and class_obj.year == year:
+                raise RuntimeError(f"[OVERVIEW] Cannot create duplicate class {name} {term} {year}. Consider choosing a new name")
+
+        if not (term.lower() == "hs" or term.lower() == "fs"):
+            raise RuntimeError(f"[OVERVIEW] Choose either HS or FS for term")
 
         class_obj = Class(name, term, year)
-        if not students is None:
-            try:
-                class_obj.initialize_new_class(students)
-            except:
-                # TODO find way to deal with error, don't accept user input or so
-                print("some error here")
         self.classes.append(class_obj)
+
+    def add_students_to_class(self, students: list[tuple[str, str]], class_obj: Class):
+        """
+        Add interface to add students to class
+        :param class_obj:
+        :return: list of students that could NOT be added
+        """
+
+        list_of_failed_students = class_obj.add_multiple_students(students)
+        if list_of_failed_students:
+            logging.error(f"[OVERVIEW] Error while creating some students. Most likely they were added a second time: {list_of_failed_students}")
+            return list_of_failed_students
+
 
     def load_categories_and_exams(self, class_obj: Class, path_folder_exams: str = None):
         """
         :return:
         """
+
+        # TODO replace with an import function
 
         # TODO I think deprecated, discarding for now
         raise NotImplementedError
@@ -266,109 +303,10 @@ class Overview:
             col_index += 2
 
 
-
-    def load_classes(self):
-        """
-        loads list of classes from memory
-        => how to deal with multiple intstances of classes? => mb load all of them, let user decide which to pick.
-        :return:
-        """
-
-        # TODO this will change with json pickle
-        raise NotImplementedError
-
-        # Loop through all files in the directory
-        print(f"Looking at {self.folderpath}")
-        for filename in os.listdir(self.folderpath):
-            # Check if the file has a .csv extension
-            print(f"Checking file {filename} on folder {self.folderpath}")
-            if filename.endswith(".csv"):
-                print(f"Extracting data from filename {filename}")
-                year, term, name = filename[:-4].split("_", 2)
-                if not self.terms.__contains__([year, term]):
-                    self.terms.append([year, term])
-                class_obj = Class(name, term, int(year))
-                # print(f"Trying to open {filename}")
-                try:
-                    with open(os.path.join(self.folderpath, filename), 'r') as f:
-                        lines = f.readlines()
-                        header = lines[0].strip().split(",")
-                        if header[0] != "Nachname" or header[1] != "Vorname":
-                            raise RuntimeWarning(
-                                "First row of CSV file should contain the strings 'Nachname' and 'Vorname'")
-                        for line in lines[1:]:
-                            lastname, firstname = line.strip().split(",")
-                            # print(f"Got here with {firstname}, {lastname}")
-                            student = Student(firstname, lastname)
-                            class_obj.students.append(student)
-                    self.classes.append(class_obj)
-
-                    # get report_id (to make sure not to create reports multiple times)
-                    max_report_no = 0
-                    for file in os.path.join(self.folderpath, filename[:-4]):
-                        # TODO test this functionality
-                        if "report" in file:
-                            try:
-                                if int(file[file.find("report"):file.find("report") + 2]) > max_report_no:
-                                    max_report_no = int(file[file.find("report"):file.find("report") + 2])
-                            except:
-                                logging.warning(f"Could not extract report number from filename {file}")
-                    class_obj.report_id = max_report_no
-
-                except:
-                    if class_obj != None:
-                        logging.error(f"Could not create class from {filename} for class {class_obj}. \n"
-                                      f"Make sure that the file is named correctly (YEAR_TERM_NAME) and does contain a list of students.\n"
-                                      f"Make sure, the first row of the Row contains a field Nachname")
-                    else:
-                        logging.error(f"Could not create class from {filename}. \n"
-                                      f"Make sure that the file is named correctly (YEAR_TERM_NAME) and does contain a list of students.\n"
-                                      f"Make sure, the first row of the Row contains a field Nachname")
-
-
-        # also sort the terms list for easier use
-        # TODO maybe i fucked up the sorting
-        self.terms.sort()
-
     def store_config(self):
         raise NotImplementedError
 
     def load_config(self):
-        raise NotImplementedError
-
-    def store_user_data(self):
-        """
-        Stores all entered user data to disk
-        :return:
-        """
-        raise NotImplementedError
-
-    def load_all_data(self):
-        """
-        After setting working directory, load all found data
-        :return:
-        """
-        raise NotImplementedError
-
-    def load_classes(self):
-        """
-        Find all classes
-        :return:
-        """
-        raise NotImplementedError
-
-    def load_class_data(self):
-        """
-        Load data for single class
-        :return:
-        """
-        raise NotImplementedError
-
-    def import_class_data(self):
-        """
-        Allow import from xlsx template
-        :return:
-        """
         raise NotImplementedError
 
     def create_import_template(self):

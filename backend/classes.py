@@ -431,7 +431,7 @@ class Class:
         raise NotImplementedError
 
 
-    def compute_average_grade_student(self, student: Student):
+    def compute_average_grade_student(self, student: Student, DEBUG=False):
         """
         Computes average grade of student across all exams
         :param student:
@@ -447,62 +447,77 @@ class Class:
 
         # TODO there are bugs here -- simply rewrite everything, it's super ugly anyway
 
-        raise NotImplementedError
+        # Collect all exams that the student has written, by category
 
+        exams_by_category = {}
 
-        grades_per_cat: dict[BaseCategory, list[float]] = {}
-        for category in self.categories:
-            grades_per_cat[category] = []
-        all_present_categories = []
+        bonus_exams = []
         for exam in self.exams:
-            if exam.category not in all_present_categories:
-                all_present_categories.append(exam.category)
-            if student in exam.grades.keys():
-                grades_per_cat[exam.category].append(exam.grades[student])
+            if isinstance(exam.category, CategoryBonus):
+                # ignore the bonus grades, they are added at the end
+                bonus_exams.append(exam)
+                continue
+            if student in exam.grades:
+                if exam.category in exams_by_category:
+                    exams_by_category[exam.category].append(exam)
+                else:
+                    exams_by_category[exam.category] = [exam]
 
 
-        # TODO will fail with bonus grades, find better solution
-        if len(all_present_categories) != len(grades_per_cat):
-            raise RuntimeWarning(f"[CLASS] Student did not write exams in all categories:\n Amount written: {len(all_present_categories)}, all categories: {len(grades_per_cat)}")
+        # TODO how to deal with this case -- ask Selina
+        # check that student has written an exam in at least every category.
+        if len(exams_by_category) != len(self.categories):
+            raise RuntimeError(f"[CLASS] Error: student did not write exams from all categories: {exams_by_category.keys} (should be {self.categories})")
 
+        # TODO mb use more elegant algorithm -- I think I'm actually doing a submodular set function here
+        def generate_subsets(elements):
+            n = len(elements)
+            for i in range(1 << n):  # Iterate from 0 to 2^n - 1
+                subset = [elements[j] for j in range(n) if (i & (1 << j)) != 0]
+                yield subset
 
-        sum_weights = 0
-        weighted_cats = []
-        results_per_cat = {}
-        for category in grades_per_cat:
-            results_per_cat[category] = category.aggregate_grades(grades_per_cat[category])
-            # not all categories have a weight
-            try:
-                weighted_cats.append(category)
-                sum_weights += category.weight
-            except:
-                logging.warning(f"Category {category} does not have a weight field")
+        resulting_grades = {}
+        for cat in exams_by_category:
+            mandatory_exam_grades = [exam.grades[student] for exam in exams_by_category[cat] if not exam.voluntary]
+            voluntary_exams = [exam.grades[student] for exam in exams_by_category[cat] if exam.voluntary]
+            possible_permutations = generate_subsets(voluntary_exams)
+            max_value = 1
+            for subset in possible_permutations:
+                current_set = mandatory_exam_grades + subset
+                averaged_grade = cat.aggregate_grades(current_set)
+                max_value = max(max_value, averaged_grade)
+            resulting_grades[cat] = max_value
 
-        if sum_weights > 1 or sum_weights == 0:
-            raise RuntimeError(f"Cannot compute weighted average for student {student}. Sum of weights is {sum_weights} (should be 1)")
+        if DEBUG:
+            print(f"[CLASS, DEBUG] Aggregated averaged grades for {student} with voluntary exams:\n{resulting_grades}")
 
+        # compute the weighted average over all weighted categories
+        sum_weigth = sum([cat.weight for cat in resulting_grades])
+        if sum_weigth == 0:
+            raise RuntimeError(f"Can't compute grade without any weights for the categories")
+        elif sum_weigth != 1:
+            logging.warning(f"[CLASS] Weights don's sum up to 1. I rescale the categories accordingly...")
+            if DEBUG:
+                print(f"[CLASS, DEBUG] Weights don's sum up to 1. I rescale the categories accordingly...")
+                print(f"[CLASS, DEBUG] Categories, weights: {sum_weigth}, {[(cat.name, cat.weight) in resulting_grades]}")
 
-        # rescale if weights don't sum up to 1
-        scaling_factor = 1
-        if sum_weights != 1:
-            logging.warning(f"Weight over categories for student {student} does not equal 1. Going to re-scale the weights accordingly")
-            scaling_factor = 1 / sum_weights
+        weighted_grade = 0
+        for cat in resulting_grades:
+            weighted_grade += 1/sum_weigth * cat.weight * resulting_grades[cat]
 
-        # get grade based on all weighted categories
-        grade = 0
-        for category in weighted_cats:
-            grade += scaling_factor * category.weight * results_per_cat[category]
+        if DEBUG:
+            print(f"[CLASS, DEBUG] Got grade {weighted_grade} for {student} (without bonus)")
 
+        # now, compute the resulting grade by also considering the bonus grades
+        final_grade = weighted_grade
+        for exam in bonus_exams:
+            raise RuntimeError(f"[CLASS] Don't support bonus grades as of now.")
 
-        # take bonus into account
-        for category in grades_per_cat:
-            if isinstance(category, CategoryBonus):
-                grade += grades_per_cat[category]
-
-        # ensure bounds of grades are kept
-        max_grade = 6
+        # ensure grade boundaries
         min_grade = 1
-        return max(min_grade, min(grade, max_grade))
+        max_grade = 6
+
+        return max(min_grade, min(max_grade, final_grade))
 
     def compute_average_grades(self):
         """

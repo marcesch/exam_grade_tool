@@ -43,7 +43,7 @@ class BaseCategory:
     def __repr__(self):
         return f"C-{self.name}"
 
-    def aggregate_grades(self, list_of_grades: list[dict[Student,float]]):
+    def aggregate_grades(self, list_of_grades: list[float]):
         """
         Compute the resulting grade for this category from the given list
         :param list_of_grades: list of exam data
@@ -99,7 +99,7 @@ class CategoryWithDroppedGrades(CategoryDefault):
 
         raise NotImplementedError
 
-    def aggregate_grades(self, list_of_grades: list[dict[Student,float]]):
+    def aggregate_grades(self, list_of_grades: list[float]):
         """
 
         :param list_of_grades:
@@ -118,5 +118,8 @@ class CategoryBonus(BaseCategory):
         """
         self.bonus_weight = max_bonus_amount
         self.achieved_bonus = dict[Student, float]= {}
+
+        # TODO probably need something like max_points, achieved_points in this category to compute how large the bonus should be
+
 
         raise NotImplementedError

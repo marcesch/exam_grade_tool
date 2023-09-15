@@ -17,20 +17,11 @@ categorization:
         - No old code
         - NotImplementedErrors, open TODOs
     - [CLASSES]:
-        - write add_exam
-        - compute_average_grade_student is messy
         - merge export_class_overview, create_grade_report
         - test that list of categories is a) complete (every category that occurs in some exam is in that list),
           and b) during computation of grade, that every category contains exams (computation of average is hard otherwise)
     - [OVERVIEW]
-        - Did not start rewrite here
-        - implement storing and loading from scratch
-        - Take care of storing things as json / ...!!!
-        - Storing: Json vs. a filesystem thingy where I store stuff as excel?
-            => for now, use a predetermined location and simply store as json -- complex afterwards
-            - On Unix-like systems in ~/.your_program_name/
-            - On Windows, the equivalent location would be C:\Users\<Username>\AppData\Local\YourProgramName\.
-            - os.path.expanduser("~\\AppData\\Local\\YourProgramName")
+        - Some RaiseNotImplemented stuff
 - [1] make sure to store everyhting to disk appropriately -- e.g. interrupt shutdown or so?
     -  use https://docs.python.org/3/library/atexit.html to deal with shutdowns
 - [2] Distinguish between filesystem => use os.path.join() for filepaths, ...
