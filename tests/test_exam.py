@@ -11,7 +11,6 @@ from backend.category import *
 # TODO test behavior for grades that are added manually
 
 
-
 @pytest.fixture
 def gen_students():
     """
@@ -165,13 +164,13 @@ def gen_students_6a():
     return students_6a
 
 @pytest.fixture
-def gen_example_points(gen_students_61):
+def gen_example_points(gen_students_6a):
     """
     Fixture providing points
     :param gen_students:
     :return:
     """
-    class_6a = gen_students
+    class_6a = gen_students_6a
     max_points = 30
 
     # make testing seeded for reproducability

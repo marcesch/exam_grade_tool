@@ -480,7 +480,7 @@ class WindowClassDetail(QMainWindow, Ui_WindowClassDetail):
     def show_window_exam_detail(self, exam):
         # TODO also initialize exam object in new window
         if self.window_examDetail is None:
-            self.window_examDetail = WindowExamDetail(exam)
+            self.window_examDetail = WindowExamDetail(exam, self.class_obj)
 
         self.window_examDetail.show()
 

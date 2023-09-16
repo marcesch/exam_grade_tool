@@ -438,13 +438,6 @@ class Class:
         :return:
         """
 
-        """
-        TODO Issues with this function:
-        - Very unelegant solution
-        - Take voluntary flag into consideration for the computation of the grade
-        - Find better solution for weight != 1
-        """
-
         # TODO there are bugs here -- simply rewrite everything, it's super ugly anyway
 
         # Collect all exams that the student has written, by category
@@ -467,7 +460,7 @@ class Class:
         # TODO how to deal with this case -- ask Selina
         # check that student has written an exam in at least every category.
         if len(exams_by_category) != len(self.categories):
-            raise RuntimeError(f"[CLASS] Error: student did not write exams from all categories: {exams_by_category.keys} (should be {self.categories})")
+            raise RuntimeError(f"[CLASS] Error: student {student} did not write exams from all categories: {exams_by_category.keys} (should be {self.categories})")
 
         # TODO mb use more elegant algorithm -- I think I'm actually doing a submodular set function here
         def generate_subsets(elements):
@@ -496,7 +489,7 @@ class Class:
         if sum_weigth == 0:
             raise RuntimeError(f"Can't compute grade without any weights for the categories")
         elif sum_weigth != 1:
-            logging.warning(f"[CLASS] Weights don's sum up to 1. I rescale the categories accordingly...")
+            logging.warning(f"[CLASS] Weights for {student} don's sum up to 1. I rescale the categories accordingly...")
             if DEBUG:
                 print(f"[CLASS, DEBUG] Weights don's sum up to 1. I rescale the categories accordingly...")
                 print(f"[CLASS, DEBUG] Categories, weights: {sum_weigth}, {[(cat.name, cat.weight) in resulting_grades]}")

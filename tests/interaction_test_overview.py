@@ -124,7 +124,6 @@ def gen_example_realistic():
     exam_controle_lecutre.add_points(points_controle_lecture)
 
 
-
     exam_orale_grade.add_grades_manually(grades_participation)
     exam_orale_exam.add_grades_manually(grades_orale_exam)
 
@@ -196,5 +195,5 @@ def load_from_application_folder():
     print(f"Points for exam {overview.classes[0].exams[0]}: {overview.classes[0].exams[0].points}")
     print(f"Grades for exam {overview.classes[0].exams[0]}: {overview.classes[0].exams[0].grades}")
 
-initiate_overview()
-# load_from_application_folder()
+# initiate_overview()
+load_from_application_folder()

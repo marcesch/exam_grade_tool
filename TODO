@@ -75,6 +75,7 @@ categorization:
 - [2] Add prompt that handles the import-from-excel (e.g. "do you want to first create a template" prompt or so)
 - [1] In tableview, protect student's name (make fields ineditable
 - [2] Look at QtCore.Qt.ItemFlag for nice properties of cells
+- [1] add average of class
 
 ## DISTRIBUTION
 - [] Try pyinstaller on Mac with small code example

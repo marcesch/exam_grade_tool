@@ -296,8 +296,17 @@ class ExamModeLinear(Exam):
 
     ################# SMALL UTILITY ##################
 
-    def enforce_point_boundaries(self, grade: float):
-        raise NotImplementedError
+    def enforce_point_boundaries(self, points: float):
+        """
+        If the points are out of bound (larger than max_points, or negative);
+        :param grade:
+        :return:
+        """
+
+        if points < 0:
+            return 0
+        if points > self.max_points:
+            return self.max_points
 
     ################## IMPORTANT FUNCTIONALITY #####################
 
@@ -313,7 +322,6 @@ class ExamModeLinear(Exam):
 
         # compute the grade
         grade = self.min_grade + (self.max_grade - self.min_grade) * points / self.points_for_max
-        grade = round(grade, 4)
 
         if grade > self.max_grade:
             logging.warning(f"[EXAM] Resulting grade ({grade}) was too high, capping at maximum grade ({self.max_grade})")
@@ -331,6 +339,8 @@ class ExamModeLinear(Exam):
             return
 
         for student in self.points:
+            if not student in self.points or self.points[student] == -1:
+                continue
             # if a student's points are -1, the grade was overwritten manually
             self.grades[student] = self.compute_single_grade(self.points[student])
 
@@ -360,8 +370,17 @@ class ExamModeSetGradeManually(Exam):
 
     ################# SMALL UTILITY ##################
 
-    def enforce_point_boundaries(self, grade: float):
-        raise NotImplementedError
+    def enforce_point_boundaries(self, points: float):
+        """
+        If the points are out of bound (larger than max_points, or negative);
+        :param grade:
+        :return:
+        """
+
+        if points < 0:
+            return 0
+        if points > self.max_points:
+            return self.max_points
 
     ################## IMPORTANT FUNCTIONALITY #####################
 
@@ -443,8 +462,17 @@ class ExamModeLinearWithPassingPoints(ExamModeLinear):
 
     ################# SMALL UTILITY ##################
 
-    def enforce_point_boundaries(self, grade: float):
-        raise NotImplementedError
+    def enforce_point_boundaries(self, points: float):
+        """
+        If the points are out of bound (larger than max_points, or negative);
+        :param grade:
+        :return:
+        """
+
+        if points < 0:
+            return 0
+        if points > self.max_points:
+            return self.max_points
 
     ################## IMPORTANT FUNCTIONALITY #####################
 
@@ -464,7 +492,7 @@ class ExamModeLinearWithPassingPoints(ExamModeLinear):
             raise RuntimeError(f"[EXAM] Can't compute grade for negative points")
         elif points < self.points_for_pass:
             return self.min_grade + (self.passing_grade - self.min_grade) * points / self.points_for_pass
-        elif points > self.points_for_pass:
+        elif points >= self.points_for_pass:
             grade =  self.passing_grade + (self.max_grade - self.passing_grade) * points / self.points_for_max
             return min(self.max_grade, grade)
         else:
@@ -527,6 +555,9 @@ class ExamModeFixedPointScheme(Exam):
         points = additional_args["points"] if "points" in additional_args else {}
         grades = additional_args["grades"] if "grades" in additional_args else {}
 
+        if "max_points" in additional_args:
+            self.max_points = additional_args["max_points"]
+
 
         self.mapping_points_grades = mapping_points_grades
         self.points = points
@@ -566,13 +597,17 @@ class ExamModeFixedPointScheme(Exam):
 
     ################# SMALL UTILITY ##################
 
-    def enforce_point_boundaries(self, grade: float):
+    def enforce_point_boundaries(self, points: float):
         """
         If the points are out of bound (larger than max_points, or negative);
         :param grade:
         :return:
         """
-        raise NotImplementedError
+
+        if points < 0:
+            return 0
+        if points > self.max_points:
+            return self.max_points
 
     ################## IMPORTANT FUNCTIONALITY #####################
 

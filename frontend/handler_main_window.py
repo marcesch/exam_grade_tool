@@ -361,10 +361,14 @@ debug_class = overview.classes[0]
 def debug_window_exam_detail():
     app = QApplication(sys.argv)
     example_exams = debug_class.exams[0]
-    example_points = {}
-    for student in debug_class.students:
-        example_points[student] = random.randint(15,30)
-    example_exams.add_points(example_points)
+
+    student_tashi = debug_class.get_student("stud", "15")
+    print(f"[DELETE THIS] Potnis tashi: {example_exams.points[student_tashi]}")
+    example_exams.points[student_tashi] = 10
+    print(f"[DELETE THIS] Points thashi now: {example_exams.points[student_tashi]}")
+    overview.save_to_json("testing_copy.json")
+    exit()
+
     win = WindowExamDetail(example_exams, debug_class)
     win.show()
 
@@ -378,6 +382,8 @@ def debug_window_class_detail():
 
     sys.exit(app.exec())
 
+
+
 # main()
-# debug_window_class_detail()
-debug_window_exam_detail()
+debug_window_class_detail()
+# debug_window_exam_detail()
