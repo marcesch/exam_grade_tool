@@ -82,6 +82,60 @@ if __name__ == '__main__':
     sys.exit(app.exec_())
 ```
 
+### Make table sortable
+```
+from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView, QApplication
+from PyQt5.QtCore import Qt
+
+class SortableTable(QTableWidget):
+    def __init__(self):
+        super().__init__()
+
+        # Set default sorting column and order
+        self.sort_column = 0
+        self.sort_order = Qt.AscendingOrder
+
+        # Connect the header to the sorting function
+        self.horizontalHeader().sectionClicked.connect(self.sort_table)
+
+    def sort_table(self, logical_index):
+        # Determine the sorting order
+        if logical_index == self.sort_column:
+            self.sort_order = Qt.DescendingOrder if self.sort_order == Qt.AscendingOrder else Qt.AscendingOrder
+        else:
+            self.sort_column = logical_index
+            self.sort_order = Qt.AscendingOrder
+
+        # Sort the table
+        self.sortItems(self.sort_column, self.sort_order)
+
+def main():
+    app = QApplication([])
+
+    table = SortableTable()
+    table.setSortingEnabled(True)
+
+    # Add columns and data to the table
+    table.setColumnCount(4)
+    table.setHorizontalHeaderLabels(['Lastname', 'Firstname', 'Points', 'Grades'])
+
+    data = [
+        ('Doe', 'John', 90.0, 3.5),
+        ('Smith', 'Alice', 85.0, 3.2),
+        ('Johnson', 'Bob', 92.5, 3.9),
+        # Add more data here
+    ]
+
+    table.setRowCount(len(data))
+    for row, (lastname, firstname, points, grades) in enumerate(data):
+        table.setItem(row, 0, QTableWidgetItem(lastname))
+        table.setItem(row, 1, QTableWidgetItem(firstname))
+        table.setItem(row, 2, QTableWidgetItem(str(points)))
+        table.setItem(row, 3, QTableWidgetItem(str(grades)))
+
+    table.show()
+```
+
 ### Distribution
 Try pyinstaller
 - [mac] https://www.pythonguis.com/tutorials/packaging-pyqt5-applications-pyinstaller-macos-dmg/

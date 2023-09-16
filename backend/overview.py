@@ -39,7 +39,6 @@ class Overview:
 
     def __init__(self):
         self.classes = []
-        self.terms = []
 
         # appdirs takes care of cross-plattform user data storage in according location
         self.application_name = "grade_calculator"
@@ -62,6 +61,9 @@ class Overview:
 
     @staticmethod
     def load_from_json(filename="overview_classes.json"):
+
+        # TODO perform checks on validity of file (types of objects are correct etc)
+
         print(f"=====> Filename {filename}")
 
         # Combine the provided filename with the application data directory
@@ -89,6 +91,20 @@ class Overview:
 
     def save_config(self):
         raise NotImplementedError
+
+    def get_terms(self):
+        """
+        :return: A list of all term/year tuples found in the self.classes[] objects
+        """
+
+        terms = []
+        for cls in self.classes:
+            if (cls.term, cls.year) not in terms:
+
+                terms.append((cls.term, cls.year))
+
+        return terms
+
 
     def get_class(self, name, year, term):
         """

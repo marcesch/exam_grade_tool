@@ -20,10 +20,14 @@ class Exam:
                  max_grade: float,
                  voluntary: bool,
                  grades: dict[Student, float]):
+
+        if not isinstance(category, BaseCategory):
+            raise RuntimeError(f"[EXAM] Expected category to be of type BaseCategory or children thereof")
+
         self.name = name
         self.term = term.lower()
         self.year = year
-        self.class_obj: str = classname
+        self.classname: str = classname
         self.category: BaseCategory = category
         if min_grade > max_grade:
             raise RuntimeError(f"Minimum grade must be smaller than maximum grade")
@@ -292,6 +296,9 @@ class ExamModeLinear(Exam):
 
     ################# SMALL UTILITY ##################
 
+    def enforce_point_boundaries(self, grade: float):
+        raise NotImplementedError
+
     ################## IMPORTANT FUNCTIONALITY #####################
 
     def compute_single_grade(self, points: float):
@@ -308,8 +315,8 @@ class ExamModeLinear(Exam):
         grade = self.min_grade + (self.max_grade - self.min_grade) * points / self.points_for_max
         grade = round(grade, 4)
 
-        if grade >= self.max_grade:
-            logging.warning("[EXAM] Resulting grade was too high, capping at maximum grade")
+        if grade > self.max_grade:
+            logging.warning(f"[EXAM] Resulting grade ({grade}) was too high, capping at maximum grade ({self.max_grade})")
             grade = self.max_grade
 
         return grade
@@ -352,6 +359,9 @@ class ExamModeSetGradeManually(Exam):
     ####################### FIELD MANIPULATIONS INTERFACE #######################
 
     ################# SMALL UTILITY ##################
+
+    def enforce_point_boundaries(self, grade: float):
+        raise NotImplementedError
 
     ################## IMPORTANT FUNCTIONALITY #####################
 
@@ -432,6 +442,9 @@ class ExamModeLinearWithPassingPoints(ExamModeLinear):
     ####################### FIELD MANIPULATIONS INTERFACE #######################
 
     ################# SMALL UTILITY ##################
+
+    def enforce_point_boundaries(self, grade: float):
+        raise NotImplementedError
 
     ################## IMPORTANT FUNCTIONALITY #####################
 
@@ -552,6 +565,14 @@ class ExamModeFixedPointScheme(Exam):
         return boundary_check_status
 
     ################# SMALL UTILITY ##################
+
+    def enforce_point_boundaries(self, grade: float):
+        """
+        If the points are out of bound (larger than max_points, or negative);
+        :param grade:
+        :return:
+        """
+        raise NotImplementedError
 
     ################## IMPORTANT FUNCTIONALITY #####################
 

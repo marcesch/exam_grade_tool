@@ -4,7 +4,7 @@ import sys
 from PyQt6 import QtCore
 from PyQt6.QtWidgets import QMainWindow, QApplication, QTreeWidget, QHeaderView, QTreeWidgetItem, QAbstractItemView
 
-from backend.category import Category
+from backend.category import *
 from backend.classes import Class
 from backend.student import Student
 from frontend.handler_window_exam_detail import WindowExamDetail
@@ -72,9 +72,26 @@ class WindowClassDetail(QMainWindow, Ui_WindowClassDetail):
         self.treeview_students.insertTopLevelItems(0, [QTreeWidgetItem([stud.lastname, stud.firstname, str(4)]) for stud in self.class_obj.students])
         # TODO keep exams in list, not in categories
         # self.treeview_exams.insertTopLevelItems(0, [QTreeWidgetItem([exam.name, exam.category, exam.number_participants()]) for exam in self.class_obj.exams])
-        self.treeview_exams.insertTopLevelItems(0, [QTreeWidgetItem([exam.name, str(0), exam.category]) for exam in self.class_obj.exams])
+
+        for exam in self.class_obj.exams:
+            print(f"[DEBUG] Exam {exam} has category {exam.category} ({type(exam.category)}) with name {exam.category.name} ({type(exam.category.name)})")
+        print(f"[WINDOW CLASS DETAIL] exam.category.name: {[[exam.name, str(0), exam.category.name] for exam in self.class_obj.exams]}")
+        self.treeview_exams.insertTopLevelItems(0, [QTreeWidgetItem([exam.name, str(0), exam.category.name]) for exam in self.class_obj.exams])
+
+        def return_category_type(category):
+            if type(category) == BaseCategory:
+                return "(no category assigned))"
+            if type(category == CategoryBonus):
+                return "Bonus"
+            if type(category == CategoryDefault):
+                return "Standard"
+            if type(category == CategoryWithDroppedGrades):
+                return "Drop Grades"
+            else:
+                raise NotImplementedError
+
         # self.treeview_categories.insertTopLevelItems(0, [QTreeWidgetItem([cat.name, str(cat.weight), cat.grading_type, self.class_obj.number_exams_in_category(cat)]) for cat in self.class_obj.categories])
-        self.treeview_categories.insertTopLevelItems(0, [QTreeWidgetItem([cat.name, str(cat.weight), cat.grading_type, str(1)]) for cat in self.class_obj.categories])
+        self.treeview_categories.insertTopLevelItems(0, [QTreeWidgetItem([cat.name, str(cat.weight), return_category_type(cat), str(len(self.class_obj.get_exams_of_category(cat)))]) for cat in self.class_obj.categories])
 
     def update_treeviews(self):
         """
@@ -455,7 +472,7 @@ class WindowClassDetail(QMainWindow, Ui_WindowClassDetail):
     def show_prompt_student_details(self, student: Student):
         raise NotImplementedError
 
-    def show_prompt_category_details(self, category: Category):
+    def show_prompt_category_details(self, category: BaseCategory):
         # TODO need to create the window prompt
         print(f"Got to show_prompt_cat_details")
         raise NotImplementedError
@@ -463,7 +480,7 @@ class WindowClassDetail(QMainWindow, Ui_WindowClassDetail):
     def show_window_exam_detail(self, exam):
         # TODO also initialize exam object in new window
         if self.window_examDetail is None:
-            self.window_examDetail = WindowExamDetail()
+            self.window_examDetail = WindowExamDetail(exam)
 
         self.window_examDetail.show()
 

@@ -17,6 +17,9 @@ categorization:
         - No old code
         - NotImplementedErrors, open TODOs
     - [CLASSES]:
+        - Test grade computation for:
+            - streichnote
+            - students missing exam
         - merge export_class_overview, create_grade_report
         - test that list of categories is a) complete (every category that occurs in some exam is in that list),
           and b) during computation of grade, that every category contains exams (computation of average is hard otherwise)
@@ -70,6 +73,8 @@ categorization:
 - [2] add default values for a new class (default category "Voci-Exams", default exam "Voci 1", ...)
 - [2] add checks on each backend-function call to catch any exception.
 - [2] Add prompt that handles the import-from-excel (e.g. "do you want to first create a template" prompt or so)
+- [1] In tableview, protect student's name (make fields ineditable
+- [2] Look at QtCore.Qt.ItemFlag for nice properties of cells
 
 ## DISTRIBUTION
 - [] Try pyinstaller on Mac with small code example

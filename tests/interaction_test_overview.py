@@ -29,6 +29,9 @@ def gen_example_realistic():
     cat_participation = CategoryDefault("participation", 0.15)
     cat_controle_lecture = CategoryDefault("controle_lecture", 0.05)
 
+    if not isinstance(cat_voci.name, str):
+        raise RuntimeError(f"category.name must be of type str, not {type(cat_voci.name)}")
+
     args_voci1 = {"max_points": 22.5, "points_for_max": 21}
     exam_voci1 = class_obj.add_exam("voci1", cat_voci, "default", args_voci1)
     args_voci2 = {"max_points": 22, "points_for_max": 21}
@@ -175,9 +178,12 @@ def initiate_overview():
         overview.add_class(class_description[0], class_description[1], class_description[2])
 
     print(f"[TEST, OVERVIEW] Created the following classes: \n {overview.classes}")
+    print(f"[TEST, OVERVIEW] With the following categories: {[[exam.name, str(0), exam.category.name] for exam in overview.classes[0].exams]}")
     print(f"[TEST OVERVIEW] Storing the user data in {overview.application_folder},,, ")
     overview.save_to_json("testing_file.json")
     print(f"[TEST OVERVIEW] Done storing the user data")
+
+    return overview
 
 def load_from_application_folder():
     print(f"\n =============\n [TESTING OVERVIEW] Starting to load data from files")
@@ -190,5 +196,5 @@ def load_from_application_folder():
     print(f"Points for exam {overview.classes[0].exams[0]}: {overview.classes[0].exams[0].points}")
     print(f"Grades for exam {overview.classes[0].exams[0]}: {overview.classes[0].exams[0].grades}")
 
-# initiate_overview()
-load_from_application_folder()
+initiate_overview()
+# load_from_application_folder()

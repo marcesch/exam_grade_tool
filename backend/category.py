@@ -34,11 +34,17 @@ class BaseCategory:
         """
 
         # e.g. redaction
-        self.name = name
+
+        if not isinstance(name, str):
+            raise RuntimeError(f"[CATEGORY] Expected name to be string.")
+        self.name: str = name
+        if not isinstance(self.name, str):
+            raise RuntimeError(f"[CATEGORY] category name must be string.")
+
 
 
     def __str__(self):
-        return f"{self.name}"
+        return self.name
 
     def __repr__(self):
         return f"C-{self.name}"
@@ -61,7 +67,13 @@ class CategoryDefault(BaseCategory):
         :param name: E.g. Voci
         :param weight: How much the category should weight in comparison to other categories
         """
-        self.name = name,
+
+        if not isinstance(name, str):
+            raise RuntimeError(f"[CATEGORY] Expected name to be string.")
+
+        self.name: str = name
+        if not isinstance(self.name, str):
+            raise RuntimeError(f"[CATEGORY] category name must be string.")
         self.weight = weight
 
     def aggregate_grades(self, list_of_grades: list[float]):
@@ -116,6 +128,11 @@ class CategoryBonus(BaseCategory):
         Subclass for categories that should not count towards weight, but instead be added absolutely. E.g. bonus grade of 0.25
         :param bonus_weight: How much should the absolute bonus count towards the final grade
         """
+
+        if not isinstance(name, str):
+            raise RuntimeError(f"[CATEGORY] Expected name to be string.")
+        self.name = name
+
         self.bonus_weight = max_bonus_amount
         self.achieved_bonus = dict[Student, float]= {}
 

@@ -14,6 +14,8 @@ from ui_main_window import Ui_MainWindow
 from frontend.handler_window_class_detail import WindowClassDetail
 from backend.overview import Overview
 
+DEBUG = True
+
 
 class Window(QMainWindow, Ui_MainWindow):
 
@@ -47,9 +49,11 @@ class Window(QMainWindow, Ui_MainWindow):
         working_directory = os.path.join(os.path.expanduser('~'), "grades_students/", "klassen/")
         print(f"[MAIN] looking for classes in {working_directory}")
 
-        self.ov = Overview()
-        self.ov.folderpath = working_directory
-        self.ov.load_classes()
+        self.ov = None
+        if DEBUG:
+            self.ov = Overview.load_from_json("testing_file.json")
+        else:
+            self.ov = Overview.load_from_json()
 
 
         no_classes_found = (len(self.ov.classes) == 0)
@@ -63,7 +67,7 @@ class Window(QMainWindow, Ui_MainWindow):
         #     self.ov.load_categories_and_exams(class_obj)
 
         print(self.ov.classes)
-        print(self.ov.terms)
+        print(self.ov.get_terms())
 
         return
 
@@ -84,40 +88,39 @@ class Window(QMainWindow, Ui_MainWindow):
         # self.tab_2.setObjectName("tab_2")
         # self.tabWidget.addTab(self.tab_2, "")
 
-        if len(self.ov.terms) == 0:
-            logging.INFO(f"No classes found at location {self.ov.folderpath}. Using default tab for gui")
+        if len(self.ov.get_terms()) == 0:
+            logging.INFO(f"No classes found. Using default tab for gui")
         else:
             # add tabs for each found term
             self.tabWidget.removeTab(0)
             self.treeViews_classes_in_term = {}
-            for term in self.ov.terms[-4:]:
-                print(f"term: {term}")
+            for term_tuple in self.ov.get_terms()[-4:]:
+                print(f"term: {term_tuple[0]} {term_tuple[1]}")
                 tab_clss = QWidget()
                 tab_clss.setEnabled(True)
-                tab_clss.setObjectName(f"tab_{term[0]}_{term[1]}")
-                self.tabWidget.addTab(tab_clss, f"{term[0]} {term[1].upper()}")
+                tab_clss.setObjectName(f"tab_{term_tuple[0]}_{term_tuple[1]}")
+                self.tabWidget.addTab(tab_clss, f"{term_tuple[0].upper()} {term_tuple[1]}")
 
                 # create treeview for this term
-                classes_in_term = self.ov.fetch_classes(term=term[1], year=term[0])
-                print(classes_in_term)
+                classes_in_term = self.ov.get_all_classes_of_period(term=term_tuple[0], year=term_tuple[1])
                 grid_layout = QGridLayout(tab_clss)
-                grid_layout.setObjectName(f"gridLayout_{term[0]}_{term[1].lower()}")
+                grid_layout.setObjectName(f"gridLayout_{term_tuple[0].lower()}_{term_tuple[1]}")
                 treeview_clss = QTreeWidget(parent=tab_clss)
                 # TODO better disselection of items (with esc, clicking somewhere else, ...)
                 treeview_clss.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
-                treeview_clss.setObjectName(f"treeView__{term[0]}_{term[1].lower()}")
+                treeview_clss.setObjectName(f"treeView__{term_tuple[0].lower}_{term_tuple[1]}")
                 header = treeview_clss.header()
                 header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
                 header.setStretchLastSection(True)
 
                 # fill treeview with list of classes
                 treeview_clss.setColumnCount(3)
-                treeview_clss.setHeaderLabels([f"Classes in {term[1].upper()} {term[0]}", "Number of students", "Number of exams"])
+                treeview_clss.setHeaderLabels([f"Classes in {term_tuple[0].upper()} {term_tuple[1]}", "Number of students", "Number of exams"])
 
-                treeview_clss.insertTopLevelItems(0, [QTreeWidgetItem([cls.name, str(len(cls.students)), str(len(cls.fetch_exams()))]) for cls in classes_in_term])
+                treeview_clss.insertTopLevelItems(0, [QTreeWidgetItem([cls.name, str(len(cls.students)), str(len(cls.exams))]) for cls in classes_in_term])
 
                 grid_layout.addWidget(treeview_clss, 0, 0, 1, 1)
-                self.treeViews_classes_in_term[f"{term[0]}_{term[1].lower()}"] = treeview_clss
+                self.treeViews_classes_in_term[f"{term_tuple[0].lower()}_{term_tuple[1]}"] = treeview_clss
 
 
     def test_function(self):
@@ -331,7 +334,7 @@ class Window(QMainWindow, Ui_MainWindow):
 
         curr_tab_name = self.tabWidget.currentWidget().objectName()
 
-        _, year, term = curr_tab_name.split('_')
+        _, term, year = curr_tab_name.split('_')
 
         return year, term.lower()
 
@@ -349,32 +352,11 @@ def main():
 # TODO proper calling from cli.py or so, don't hardcode the main function caller
 
 # DEBUG CODE
-debug_class = Class(name="1a", year=2020, term="HS")
-debug_students = [
-    {"firstname": "Hans", "lastname": "Wurst"},
-    {"firstname": "Joerg", "lastname": "Salat"},
-    {"firstname": "Name", "lastname": "Pasta"},
-    {"firstname": "None", "lastname": "Nudeln"}
-]
-debug_class.initialize_new_class(debug_students)
-debug_class.add_exam("ex1", "cat1", 30)
-debug_class.add_exam("ex2", "cat1", 30)
-debug_class.add_exam("ex3", "cat1", 30)
-debug_class.add_exam("ex11", "cat2", 30)
-debug_class.add_exam("ex12", "cat2", 30)
-debug_class.add_exam("ex13", "cat2", 30)
-debug_class.add_exam("ex14", "cat2", 30)
-debug_class.add_exam("ex21", "cat3", 30)
-debug_class.add_exam("ex22", "cat3", 30)
-debug_class.add_exam("ex23", "cat3", 30)
-debug_class.add_exam("ex24", "cat3", 30)
-debug_class.add_exam("ex25", "cat3", 30)
-debug_class.add_exam("ex26", "cat3", 30)
+from tests.interaction_test_overview import initiate_overview
+overview = initiate_overview()
+debug_class = overview.classes[0]
 
-exams = []
-for cat in debug_class.categories:
-    exams += cat.exams
-debug_class.exams = exams
+# TODO continue here
 
 def debug_window_exam_detail():
     app = QApplication(sys.argv)
@@ -383,7 +365,7 @@ def debug_window_exam_detail():
     for student in debug_class.students:
         example_points[student] = random.randint(15,30)
     example_exams.add_points(example_points)
-    win = WindowExamDetail(example_exams)
+    win = WindowExamDetail(example_exams, debug_class)
     win.show()
 
     sys.exit(app.exec())
