@@ -77,6 +77,8 @@ categorization:
 - [2] Look at QtCore.Qt.ItemFlag for nice properties of cells
 - [1] add average of class
 - [1] Add try except everywhere when opening a window -- log the errors, but don't terminate application
+- [1] Allow copy/pasting multiple from or to table view (e.g. in exam details)
+
 
 ## DISTRIBUTION
 - [] Try pyinstaller on Mac with small code example

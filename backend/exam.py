@@ -105,6 +105,8 @@ class Exam:
         :return: -1 if grade was too low, 1 if grade was too high -- will be truncated in either case
         """
 
+        if type(grade) not in [float, int]:
+            raise RuntimeError(f"Type of grade must be float or int (received {type(grade)}, {grade})")
         grade, boundary_check_status = self.enforce_grade_boundaries(grade)
 
         if student not in self.grades.keys():

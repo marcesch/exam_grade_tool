@@ -99,10 +99,15 @@ class WindowExamDetail(QMainWindow, Ui_WindowExamDetails):
                     return
                 if not self.setup_finished:
                     return
-                if item.column()==2:
-                    self.handle_student_point_modification(item.row(), float(self.table_points_grades.item(item.row(), item.column()).text()))
-                if item.column()==3:
-                    self.handle_student_grade_modification(item.row(), float(self.table_points_grades.item(item.row(), item.column()).text()))
+                try:
+                    if item.column()==2:
+                        self.handle_student_point_modification(item.row(), float(self.table_points_grades.item(item.row(), item.column()).text()))
+                    if item.column()==3:
+                        self.handle_student_grade_modification(item.row(), float(self.table_points_grades.item(item.row(), item.column()).text()))
+                except Exception as e:
+                    # if anything weird happens (badly formatted input etc.), simply don't accept the change
+                    print(f"Exception here: {e}")
+                    self.update_table_data()
 
             # now, add behavior on modifying field values
             self.table_points_grades.itemChanged.connect(switcher_for_item_change)
@@ -247,7 +252,11 @@ class WindowExamDetail(QMainWindow, Ui_WindowExamDetails):
                                 print(self.exam.points)
                                 item_points.setText("")
                             else:
-                                item_points.setText(str(points_student))
+                                # make it more beautiful
+                                if (points_student * 10) % 10 == 0:
+                                    item_points.setText(str(int(points_student)))
+                                else:
+                                    item_points.setText(str(points_student))
 
                         else:
 
@@ -255,7 +264,6 @@ class WindowExamDetail(QMainWindow, Ui_WindowExamDetails):
             except:
                 continue
 
-            self.ignore_updates = False
 
 
 
@@ -294,7 +302,7 @@ class WindowExamDetail(QMainWindow, Ui_WindowExamDetails):
             print(f"[WINDOW EXAM DETAIL] Changed points_for_max value: {self.exam.points_for_max}, {item} (max: {self.exam.max_points})")
         except:
             self.input_points_for_max.setText(str(self.exam.points_for_max))
-
+        self.ignore_updates = False
 
     def test_function(self):
         raise NotImplementedError
@@ -313,10 +321,6 @@ class WindowExamDetail(QMainWindow, Ui_WindowExamDetails):
     def handle_student_point_modification(self, row, new_points):
         print(f"[DEBUG] Got here with {new_points}")
 
-        if new_points < 0:
-            # catch this case just to be sure that nothing bad happens (the negative grades are special flags in backend)
-            return
-
         if not hasattr(self.exam, 'points'):
             raise RuntimeError(f"[WINDOW EXAM DETAIL] Cannot set points for that exam (wrong type)")
         firstname = self.table_points_grades.item(row, 1).text()
@@ -324,13 +328,15 @@ class WindowExamDetail(QMainWindow, Ui_WindowExamDetails):
         student = self.class_obj.get_student(firstname, lastname)
         new_points = self.exam.enforce_point_boundaries(new_points)
         self.exam.points[student] = new_points
+        # display cleaned grade
+        self.ignore_updates = True
+
         # TODO maybe replace with method that computes grade just for this student
         self.exam.compute_grades()
-
+        self.update_table_data()
 
         # use this to signal the itemChanged thingy to not do anything
-        self.ignore_updates = True
-        self.table_points_grades.setItem(row, 3, QTableWidgetItem(str(round(self.exam.grades[student], 4))))
+        # self.table_points_grades.setItem(row, 3, QTableWidgetItem(str(round(self.exam.grades[student], 4))))
         self.ignore_updates = False
 
 
@@ -341,7 +347,12 @@ class WindowExamDetail(QMainWindow, Ui_WindowExamDetails):
         lastname = self.table_points_grades.item(row, 0).text()
         student = self.class_obj.get_student(firstname, lastname)
 
-        new_grade = self.exam.enforce_grade_boundaries(new_grade)
+        # try:
+        #     float(new_grade)
+        # except:
+        #     raise RuntimeError(f'Type of grade must be float!')
+
+        new_grade, _ = self.exam.enforce_grade_boundaries(float(new_grade))
         self.exam.add_grade_manually(student, new_grade)
         if hasattr(self.exam, "points"):
             if student in self.exam.points:
@@ -350,5 +361,7 @@ class WindowExamDetail(QMainWindow, Ui_WindowExamDetails):
 
 
         self.ignore_updates = True
-        self.table_points_grades.setItem(row, 2, QTableWidgetItem(""))
+        self.update_table_data()
+        # self.table_points_grades.setItem(row, 2, QTableWidgetItem(""))
+        self.table_points_grades.setItem(row, 3, QTableWidgetItem(str(self.exam.grades[student])))
         self.ignore_updates = False
