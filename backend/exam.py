@@ -24,6 +24,9 @@ class Exam:
         if not isinstance(category, BaseCategory):
             raise RuntimeError(f"[EXAM] Expected category to be of type BaseCategory or children thereof")
 
+
+        # TODO add precision for rounding (maybe..)
+        self.precision = 4
         self.name = name
         self.term = term.lower()
         self.year = year
@@ -75,6 +78,13 @@ class Exam:
         # TODO the caller needs to take care of changing the category of exam / adding to appropriate lists -> can't deal with circular imports
         self.category = new_category
 
+    def change_exam_type(self):
+        """
+        To change the type of an exam (e.g. from Linear to Linear with passing poitns etc.
+        :return:
+        """
+        raise NotImplementedError
+
 
     def add_grades_manually(self, grades: dict[Student, float]):
         """
@@ -106,6 +116,8 @@ class Exam:
         return boundary_check_status
 
 
+
+
     ################# SMALL UTILITY ##################
 
     def number_participants(self):
@@ -113,6 +125,23 @@ class Exam:
         :return: The number of students that have written this exam
         """
         return len(self.grades.keys())
+
+    def enforce_point_boundaries(self, points: float):
+        """
+        If the points are out of bound (larger than max_points, or negative);
+        :param grade:
+        :return:
+        """
+
+        if hasattr(self, "max_points"):
+            if points < 0:
+                return 0
+            if points > self.max_points:
+                return self.max_points
+            return points
+        else:
+            raise RuntimeError(f"[EXAM] Exam type {type(self)} does not have field max_points")
+
 
     def enforce_grade_boundaries(self, grade: float):
         """
@@ -130,6 +159,32 @@ class Exam:
             grade = self.max_grade
 
         return grade, ret
+
+    @staticmethod
+    def exam_types():
+        return          ["Linear", "Set Points Manually", "Linear (w/ passing grade)", "Fixed Point Scheme", "Gaussian Curve Fit"]
+
+
+    def exam_type(self):
+        """
+        Print a description of exam type for displaying in GUI
+        :return:
+        """
+
+        if type(self) == Exam:
+            return "No Type"
+        if type(self) == ExamModeLinear:
+            return "Linear"
+        if type(self) == ExamModeLinearWithPassingPoints:
+            return "Linear (w/ passing grade)"
+        if type(self) == ExamModeFixedPointScheme:
+            return "Fixed Point Scheme"
+        if type(self) == ExamModeHeavyCurveFitting:
+            return "Gaussian Curve Fit"
+        if type(self) == ExamModeSetGradeManually:
+            return "Set Points Manually"
+        else:
+            raise RuntimeError(f"[EXAM] Unknown exam type: {type(self)}")
 
     ################## IMPORTANT FUNCTIONALITY #####################
 
@@ -296,17 +351,6 @@ class ExamModeLinear(Exam):
 
     ################# SMALL UTILITY ##################
 
-    def enforce_point_boundaries(self, points: float):
-        """
-        If the points are out of bound (larger than max_points, or negative);
-        :param grade:
-        :return:
-        """
-
-        if points < 0:
-            return 0
-        if points > self.max_points:
-            return self.max_points
 
     ################## IMPORTANT FUNCTIONALITY #####################
 
@@ -344,6 +388,7 @@ class ExamModeLinear(Exam):
             # if a student's points are -1, the grade was overwritten manually
             self.grades[student] = self.compute_single_grade(self.points[student])
 
+
 class ExamModeSetGradeManually(Exam):
     def __init__(self,
                  name: str,
@@ -370,17 +415,6 @@ class ExamModeSetGradeManually(Exam):
 
     ################# SMALL UTILITY ##################
 
-    def enforce_point_boundaries(self, points: float):
-        """
-        If the points are out of bound (larger than max_points, or negative);
-        :param grade:
-        :return:
-        """
-
-        if points < 0:
-            return 0
-        if points > self.max_points:
-            return self.max_points
 
     ################## IMPORTANT FUNCTIONALITY #####################
 
@@ -462,17 +496,6 @@ class ExamModeLinearWithPassingPoints(ExamModeLinear):
 
     ################# SMALL UTILITY ##################
 
-    def enforce_point_boundaries(self, points: float):
-        """
-        If the points are out of bound (larger than max_points, or negative);
-        :param grade:
-        :return:
-        """
-
-        if points < 0:
-            return 0
-        if points > self.max_points:
-            return self.max_points
 
     ################## IMPORTANT FUNCTIONALITY #####################
 
@@ -562,9 +585,6 @@ class ExamModeFixedPointScheme(Exam):
         self.mapping_points_grades = mapping_points_grades
         self.points = points
 
-        # make sure to keep the manually set grade over the one calculated by grades
-        for student in grades:
-            self.points[student] = -1
 
 
         super().__init__(name, term, year, classname, category, min_grade, max_grade, voluntary, grades)
@@ -597,17 +617,7 @@ class ExamModeFixedPointScheme(Exam):
 
     ################# SMALL UTILITY ##################
 
-    def enforce_point_boundaries(self, points: float):
-        """
-        If the points are out of bound (larger than max_points, or negative);
-        :param grade:
-        :return:
-        """
 
-        if points < 0:
-            return 0
-        if points > self.max_points:
-            return self.max_points
 
     ################## IMPORTANT FUNCTIONALITY #####################
 

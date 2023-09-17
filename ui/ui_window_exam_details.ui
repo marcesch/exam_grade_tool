@@ -15,44 +15,7 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout_2">
-    <item row="0" column="2">
-     <widget class="QLabel" name="label_2">
-      <property name="text">
-       <string>Exam Category</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="3">
-     <widget class="QComboBox" name="input_examCategory"/>
-    </item>
-    <item row="2" column="2">
-     <widget class="QLabel" name="label_5">
-      <property name="text">
-       <string>Points for 6</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="1">
-     <widget class="QLineEdit" name="input_examName">
-      <property name="inputMask">
-       <string/>
-      </property>
-      <property name="text">
-       <string>&lt;exam_name&gt;</string>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="1">
-     <widget class="QLineEdit" name="lineEdit">
-      <property name="inputMethodHints">
-       <set>Qt::ImhFormattedNumbersOnly</set>
-      </property>
-      <property name="text">
-       <string>&lt;max_pts&gt;</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="0" colspan="6">
+    <item row="3" column="0" colspan="7">
      <widget class="QTableWidget" name="table_points_grades">
       <column>
        <property name="text">
@@ -76,13 +39,10 @@
       </column>
      </widget>
     </item>
-    <item row="2" column="3">
-     <widget class="QLineEdit" name="lineEdit_2">
-      <property name="inputMethodHints">
-       <set>Qt::ImhFormattedNumbersOnly</set>
-      </property>
+    <item row="4" column="4">
+     <widget class="QPushButton" name="button_generateReport">
       <property name="text">
-       <string>&lt;ptsFor6&gt;</string>
+       <string>Generate Exam Report</string>
       </property>
      </widget>
     </item>
@@ -97,10 +57,10 @@
       </item>
      </layout>
     </item>
-    <item row="2" column="0">
-     <widget class="QLabel" name="label_4">
+    <item row="4" column="1">
+     <widget class="QPushButton" name="button_export_excel">
       <property name="text">
-       <string>Maximum Points</string>
+       <string>Export Exam as .xlsx</string>
       </property>
      </widget>
     </item>
@@ -112,14 +72,37 @@
      </widget>
     </item>
     <item row="1" column="1">
-     <widget class="QComboBox" name="comboBox"/>
+     <widget class="QComboBox" name="input_examType"/>
     </item>
-    <item row="1" column="3">
-     <widget class="QPushButton" name="button_generateReport">
+    <item row="0" column="1">
+     <widget class="QLineEdit" name="input_examName">
+      <property name="inputMask">
+       <string/>
+      </property>
       <property name="text">
-       <string>Generate Exam Report</string>
+       <string>&lt;exam_name&gt;</string>
       </property>
      </widget>
+    </item>
+    <item row="1" column="2">
+     <widget class="QLabel" name="label_6">
+      <property name="text">
+       <string>Voluntary</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="2">
+     <widget class="QLabel" name="label_2">
+      <property name="text">
+       <string>Exam Category</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="3" colspan="2">
+     <widget class="QComboBox" name="input_voluntary"/>
+    </item>
+    <item row="0" column="3" colspan="2">
+     <widget class="QComboBox" name="input_examCategory"/>
     </item>
    </layout>
   </widget>

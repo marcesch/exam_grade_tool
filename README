@@ -136,6 +136,42 @@ def main():
     table.show()
 ```
 
+### For handling Esc keypress over entire window
+Replace the Q-Widget with new custom widgets that react on the signal (if event.key() == Qt.Key_Escape):
+
+```
+class CustomComboBox(QComboBox):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            self.setCurrentIndex(-1)  # Deselect the current item
+        else:
+            super().keyPressEvent(event)
+
+class CustomLineEdit(QLineEdit):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            self.clear()  # Revert changes by clearing the text
+        else:
+            super().keyPressEvent(event)
+
+class CustomTableWidget(QTableWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            for item in self.selectedItems():
+                item.setText("")  # Revert changes by setting the text to an empty string
+        else:
+            super().keyPressEvent(event)
+```
+
 ### Distribution
 Try pyinstaller
 - [mac] https://www.pythonguis.com/tutorials/packaging-pyqt5-applications-pyinstaller-macos-dmg/
