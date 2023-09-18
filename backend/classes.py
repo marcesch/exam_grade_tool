@@ -107,16 +107,18 @@ class Class:
         else:
             raise RuntimeError(f"Could not find student {student} in class {self}")
 
-    def delete_exam(self, exam: Exam):
+    def delete_exam(self, exam_name: str):
         """
         Deletion based on object reference instead of name. Replace other funciton usages with delete instead of remove
         :param exam:
         :return:
         """
-        if exam in self.exams:
-            self.exams.remove(exam)
+
+        if self.contains_exam(exam_name):
+            exam_obj = self.get_exam(exam_name)
+            self.exams.remove(exam_obj)
         else:
-            raise RuntimeError(f"Could not find exam {exam} in class {self}")
+            raise RuntimeError(f"Could not find exam {exam_name} in class {self}: {self.exams}")
 
     def delete_category(self, category: BaseCategory):
         """
@@ -290,7 +292,7 @@ class Class:
         :return: reference to Exam object corresponding to the name
         """
         for ex in self.exams:
-            if ex.name == exam_name:
+            if ex.name.lower() == exam_name.lower():
                 return ex
 
         raise RuntimeError(f"Could not find exam {exam_name} in list {self.exams}")
@@ -317,6 +319,61 @@ class Class:
         """
 
         return [exam for exam in self.exams if student in exam.grades]
+
+
+    def change_exam_type(self, old_exam: Exam, new_exam_type: str, additional_args = {}):
+        """
+        To change the type of an exam (e.g. from Linear to Linear with passing poitns etc.
+        """
+
+        if not self.contains_exam(old_exam.name):
+            raise RuntimeError(f"[CLASS] {old_exam} is not in my list of exams {self.exams}")
+
+        # store old field data
+        if type(old_exam) == ExamModeLinear:
+            # prioritize the newly given additional arguments, otherwise take field values from existing exam
+            additional_args["min_grade"] = additional_args["min_grade"] if "min_grade" in additional_args else old_exam.min_grade
+            additional_args["max_grade"] = additional_args["max_grade"] if "max_grade" in additional_args else old_exam.max_grade
+            additional_args["voluntary"] = additional_args["voluntary"] if "voluntary" in additional_args else old_exam.voluntary
+            additional_args["points"] = additional_args["points"] if "points" in additional_args else old_exam.points
+            additional_args["grades"] = additional_args["grades"] if "grades" in additional_args else old_exam.grades
+            additional_args["max_points"] = additional_args["max_points"] if "max_points" in additional_args else old_exam.max_points
+            additional_args["points_for_max"] = additional_args["points_for_max"] if "points_for_max" in additional_args else old_exam.points_for_max
+        elif type(old_exam) == ExamModeLinearWithPassingPoints:
+            additional_args["min_grade"] = additional_args["min_grade"] if "min_grade" in additional_args else old_exam.min_grade
+            additional_args["max_grade"] = additional_args["max_grade"] if "max_grade" in additional_args else old_exam.max_grade
+            additional_args["voluntary"] = additional_args["voluntary"] if "voluntary" in additional_args else old_exam.voluntary
+            additional_args["points"] = additional_args["points"] if "points" in additional_args else old_exam.points
+            additional_args["grades"] = additional_args["grades"] if "grades" in additional_args else old_exam.grades
+            additional_args["points_for_pass"] = additional_args["points_for_pass"] if "points_for_pass" in additional_args else old_exam.points_for_pass
+            additional_args["max_points"] = additional_args[
+                "max_points"] if "max_points" in additional_args else old_exam.max_points
+            additional_args["points_for_max"] = additional_args["points_for_max"] if "points_for_max" in additional_args else old_exam.points_for_max
+        elif type(old_exam) == ExamModeFixedPointScheme:
+            raise NotImplementedError
+        elif type(old_exam) == ExamModeHeavyCurveFitting:
+            raise NotImplementedError
+        elif type(old_exam) == ExamModeSetGradeManually:
+            additional_args["min_grade"] = additional_args["min_grade"] if "min_grade" in additional_args else old_exam.min_grade
+            additional_args["max_grade"] = additional_args["max_grade"] if "max_grade" in additional_args else old_exam.max_grade
+            additional_args["voluntary"] = additional_args["voluntary"] if "voluntary" in additional_args else old_exam.voluntary
+            additional_args["grades"] = additional_args["grades"] if "grades" in additional_args else old_exam.grades
+
+        # initialize new class object
+        try:
+            # If I immediately use the "correct" name, will get "exam exists" exception
+            temp_name = "temp_name"
+            old_name = old_exam.name
+            new_exam_obj = self.add_exam(temp_name, old_exam.category, new_exam_type, additional_args)
+            # delete the old exam
+            if not type(old_name) == str:
+                raise RuntimeError(f"[CLASS] Expected string, not {type(old_exam)} for {old_exam}")
+            self.delete_exam(old_name)
+            new_exam_obj.name = old_name
+            return new_exam_obj
+        except Exception as e:
+            logging.error(f"[CLASS] Could not alter class category: {e}. Won't do anything and keep things as they are")
+            raise RuntimeError(f"[CLASS] Could not alter {old_exam}'s category. Have you passed all required arguments for the new exam?\n (Got exception {e.__str__()})")
 
 
     ################## IMPORTANT FUNCTIONALITY #####################
@@ -382,7 +439,7 @@ class Class:
             try:
                 max_points = additional_args["max_points"]
                 points_for_pass = additional_args["points_for_pass"]
-                points_for_max = 0
+                points_for_max = additional_args["points_for_max"]
 
                 if "points_for_max" not in additional_args:
                     logging.warning(f"[CLASS] Did not receive point_for_max argument. Defaulting to max points")

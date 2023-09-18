@@ -363,7 +363,7 @@ def debug_window_exam_detail():
     example_exams = debug_class.exams[0]
 
 
-    win = WindowExamDetail(example_exams, debug_class)
+    win = WindowExamDetail(example_exams.name, debug_class)
     win.show()
 
     sys.exit(app.exec())

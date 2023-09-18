@@ -392,7 +392,7 @@ class WindowClassDetail(QMainWindow, Ui_WindowClassDetail):
                 logging.WARNING(f"Could not find exam {exam_name} in {self.class_obj}")
         if len(selected_exams) > 0:
             for exam in selected_exams:
-                self.class_obj.delete_exam(exam)
+                self.class_obj.delete_exam(exam.name)
             self.update_treeview_exam()
 
     def handle_button_details_category(self):
@@ -480,7 +480,7 @@ class WindowClassDetail(QMainWindow, Ui_WindowClassDetail):
     def show_window_exam_detail(self, exam):
         # TODO also initialize exam object in new window
         if self.window_examDetail is None:
-            self.window_examDetail = WindowExamDetail(exam, self.class_obj)
+            self.window_examDetail = WindowExamDetail(exam.name, self.class_obj)
 
         self.window_examDetail.show()
 

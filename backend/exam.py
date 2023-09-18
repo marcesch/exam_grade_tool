@@ -78,12 +78,7 @@ class Exam:
         # TODO the caller needs to take care of changing the category of exam / adding to appropriate lists -> can't deal with circular imports
         self.category = new_category
 
-    def change_exam_type(self):
-        """
-        To change the type of an exam (e.g. from Linear to Linear with passing poitns etc.
-        :return:
-        """
-        raise NotImplementedError
+
 
 
     def add_grades_manually(self, grades: dict[Student, float]):
@@ -163,8 +158,12 @@ class Exam:
         return grade, ret
 
     @staticmethod
-    def exam_types():
-        return          ["Linear", "Set Points Manually", "Linear (w/ passing grade)", "Fixed Point Scheme", "Gaussian Curve Fit"]
+    def show_exam_types():
+        # See at bottom of file for actual declarations (python does not supprot forward declarations)
+
+        return Exam.exam_types
+
+
 
 
     def exam_type(self):
@@ -289,6 +288,7 @@ class ExamModeLinear(Exam):
         :param grades: manually overwrite computed grades with present grades
         """
 
+
         min_grade = additional_args["min_grade"] if "min_grade" in additional_args else 1
         max_grade = additional_args["max_grade"] if "max_grade" in additional_args else 6
         passing_grade = additional_args["passing_grade"] if "passing_grade" in additional_args else 4
@@ -302,6 +302,10 @@ class ExamModeLinear(Exam):
         # define fields specifically for this class
         self.max_points = max_points
         self.points_for_max = points_for_max
+
+        if self.points_for_max > self.max_points:
+            logging.warning(f"Received higher points for max ({self.points_for_max}) than max points ({self.max_points}). Capping at max_points")
+            self.points_for_max = self.max_points
 
         # points entered by user take precedence over manually entered grades -- hence dropping keys form grades where points are available
         self.grades = grades
@@ -458,7 +462,7 @@ class ExamModeLinearWithPassingPoints(ExamModeLinear):
                  # volutary: bool=False,
                  # points: dict[Student, float] = {},
                  # grades: dict[Student, float] = {}
-                 ):
+     ):
         """
         Allows setting a cutoff for passing grade (allowing the teacher to adjust the resulting grades more for difficult exams)
         :param points_for_max: points for maximal grade
@@ -469,9 +473,11 @@ class ExamModeLinearWithPassingPoints(ExamModeLinear):
         :param additional_args: dictionary with the additional arguments for this function (used by caller for more elegant code)
         """
 
+
+
         self.points_for_pass = points_for_pass
         if points_for_pass > points_for_max:
-            raise RuntimeError(f"Passing points cannot be higher than points for max")
+            raise RuntimeError(f"[EXAM] Passing points cannot ({points_for_pass}) be higher than points for max ({points_for_max})")
 
 
         # unpack additional arguments
@@ -490,8 +496,9 @@ class ExamModeLinearWithPassingPoints(ExamModeLinear):
                 f"Points needed for max grade ({points_for_max}) cannot be higher than maximum possible points ({max_points})")
 
         self.passing_grade = passing_grade
-        super().__init__(name, term, year, classname, category, max_points, points_for_max,
-                 min_grade, max_grade, voluntary, points, grades)
+        super().__init__(name, term, year, classname, category, max_points, points_for_max, additional_args)
+
+
 
 
     ####################### FIELD MANIPULATIONS INTERFACE #######################
@@ -566,13 +573,15 @@ class ExamModeFixedPointScheme(Exam):
                 # voluntary: bool = False,
                 # points: dict[Student, float] = {},
                 # grades: dict[Student, float] = {}
-                 ):
+    ):
         """
         Allows to set a fixed point-to-grade mapping (with x points, you get grade y)
         :param mapping_points_grades: dictionary with table point x gets grade y
         :param points:
         :param grades:
         """
+
+
 
         min_grade = additional_args["min_grade"] if "min_grade" in additional_args else 1
         max_grade = additional_args["max_grade"] if "max_grade" in additional_args else 6
@@ -583,13 +592,12 @@ class ExamModeFixedPointScheme(Exam):
         if "max_points" in additional_args:
             self.max_points = additional_args["max_points"]
 
-
         self.mapping_points_grades = mapping_points_grades
         self.points = points
 
-
-
         super().__init__(name, term, year, classname, category, min_grade, max_grade, voluntary, grades)
+
+
 
         # TODO complete
         raise NotImplementedError
@@ -650,3 +658,20 @@ class ExamModeFixedPointScheme(Exam):
     #         # if a student's points are -1, the grade was overwritten manually
     #         if self.points[student] != -1:
     #             self.grades[student] = self.compute_single_grade(self.points[student])
+
+
+
+Exam.name = "no_type"
+ExamModeLinear.name = "linear"
+ExamModeLinearWithPassingPoints.name = "linear_with_pass"
+ExamModeSetGradeManually.name = "manually"
+ExamModeFixedPointScheme.name = "fixed_point_scheme"
+ExamModeHeavyCurveFitting.name = "gaussian"
+
+Exam.exam_types = {
+    "Linear": ExamModeLinear,
+    "Set Points Manually": ExamModeSetGradeManually,
+    "Linear (w/ passing grade)": ExamModeLinearWithPassingPoints,
+    "Fixed Point Scheme": ExamModeFixedPointScheme,
+    "Gaussian Curve Fit": ExamModeHeavyCurveFitting
+}
