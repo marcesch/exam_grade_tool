@@ -41,7 +41,6 @@ class WindowExamDetail(QMainWindow, Ui_WindowExamDetails):
         self.populate_list_view()
         self.populate_q_boxes()
         self.display_fields()
-        self.connect_signals()
         self.setup_finished = True
 
         # TODO add average as a last row in treeview
@@ -242,6 +241,9 @@ class WindowExamDetail(QMainWindow, Ui_WindowExamDetails):
 
         self.display_fields_examtype()
 
+        self.connect_signals()
+
+
         # TODO show average over class (points and grades)
 
     def disselect_current_widget(self):
@@ -386,49 +388,23 @@ class WindowExamDetail(QMainWindow, Ui_WindowExamDetails):
 
     def connect_signals(self):
 
-        try:
+        if hasattr(self, "input_max_points"):
             self.input_max_points.editingFinished.connect(self.update_max_points)
-        except:
-            pass
-        try:
-            self.input_points_for_max.editingFinished.connect(self.update_points_for_max)
-        except:
-            pass
-        try:
-            self.input_points_for_pass.editingFinished.connect(self.update_points_for_pass)
-        except:
-            pass
-
-        try:
             self.input_max_points.returnPressed.connect(self.disselect_current_widget)
-        except:
-            pass
-        try:
+        if hasattr(self, "input_points_for_max"):
+            self.input_points_for_max.editingFinished.connect(self.update_points_for_max)
             self.input_points_for_max.returnPressed.connect(self.disselect_current_widget)
-        except:
-            pass
-        try:
-            self.input_examCategory.currentIndexChanged.connect(self.test_function)
-        except:
-            pass
-        try:
-            self.input_voluntary.currentIndexChanged.connect(self.test_function)
-        except:
-            pass
-        try:
-            self.input_examType.currentIndexChanged.connect(self.handle_exam_type_change)
-        except:
-            pass
-        try:
-            self.button_generateReport.clicked.connect(self.test_function)
-            self.button_generateReport.clicked.connect(self.handle_button_generate_grade_report)
+        if hasattr(self, "input_points_for_pass"):
+            self.input_points_for_pass.editingFinished.connect(self.update_points_for_pass)
+            self.input_points_for_pass.returnPressed.connect(self.disselect_current_widget)
 
-        except:
-            pass
-        try:
-            self.button_export_excel.clicked.connect(self.test_function)
-        except:
-            pass
+        self.input_examCategory.currentIndexChanged.connect(self.test_function)
+        self.input_voluntary.currentIndexChanged.connect(self.test_function)
+        self.input_examType.currentIndexChanged.connect(self.handle_exam_type_change)
+
+        self.button_generateReport.clicked.connect(self.handle_button_generate_grade_report)
+        self.button_export_excel.clicked.connect(self.test_function)
+
 
 
         def switcher_for_item_change(item):
@@ -565,11 +541,15 @@ class WindowExamDetail(QMainWindow, Ui_WindowExamDetails):
         for widgets in self.get_mandatory_fields():
             # color the mandatory fields
             if widgets.text() != "":
+                print("here1234123")
+                palette = QApplication.palette()
+                background_color = QColor(255, 255, 255)
+                palette.setColor(QPalette.ColorRole.Base, background_color)
+                widgets.setPalette(palette)
                 continue
             empty_widgets.append(widgets)
             palette = QApplication.palette()
             background_color = QColor(255, 0, 0)  # Red color (adjust as needed)
-            print(type(palette.base()))
             palette.setColor(QPalette.ColorRole.Base, background_color)
             widgets.setPalette(palette)
 
