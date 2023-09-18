@@ -1,7 +1,7 @@
 from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor
-from PyQt6.QtWidgets import QMainWindow, QTableWidgetItem
+from PyQt6.QtWidgets import QMainWindow, QTableWidgetItem, QApplication
 
 from backend.classes import Class
 from backend.exam import *
@@ -97,19 +97,73 @@ class WindowExamDetail(QMainWindow, Ui_WindowExamDetails):
             except:
                 self.table_points_grades.setItem(row_position, 3, QTableWidgetItem(""))
 
+    def remove_fields(self):
+        """
+        Removes any "old" fields in the gridlayout
+        :return:
+        """
 
-    def display_fields_examtype(self, new_type = None):
+        while self.gridLayout_2.count() > 4:
+            print(f"here {self.gridLayout_2.count()}")
+
+            widget = self.gridLayout_2.itemAt(0)
+            self.gridLayout_2.removeItem(widget)
+
+
+
+
+
+    def display_fields_examtype(self, new_type):
+
         _translate = QtCore.QCoreApplication.translate
         exam_type = type(self.exam) if new_type == None else new_type
         print(exam_type)
         if not issubclass(exam_type, Exam):
             raise RuntimeError(f"[WINDOW EXAM DETAILS] New_type must be a valid subclass of Exam (got {new_type}")
-
             # display different fields based on exam type
         if exam_type == ExamModeLinearWithPassingPoints:
-            print(f"[WINDOW EXAM DETAIL, DEBUG] Arrived here")
-            # TODO continue here
-            raise NotImplementedError
+            number_additinal_rows = 2
+            self.gridLayout_2.addWidget(self.table_points_grades, 3 + number_additinal_rows, 0, 1, 7)
+            self.gridLayout_2.addWidget(self.button_generateReport, 4 + number_additinal_rows, 4, 1, 1)
+            self.gridLayout_2.addWidget(self.button_export_excel, 4 + number_additinal_rows, 1, 1, 1)
+
+            self.input_max_points = QtWidgets.QLineEdit(parent=self.centralwidget)
+            self.input_max_points.setInputMethodHints(QtCore.Qt.InputMethodHint.ImhFormattedNumbersOnly)
+            self.input_max_points.setObjectName("max_points")
+            self.gridLayout_2.addWidget(self.input_max_points, 3, 1, 1, 1)
+            self.input_points_for_max = QtWidgets.QLineEdit(parent=self.centralwidget)
+            self.input_points_for_max.setInputMethodHints(QtCore.Qt.InputMethodHint.ImhFormattedNumbersOnly)
+            self.input_points_for_max.setObjectName("points_for_max")
+            self.gridLayout_2.addWidget(self.input_points_for_max, 4, 4, 1, 1)
+            self.input_points_for_pass = QtWidgets.QLineEdit(parent=self.centralwidget)
+            self.input_points_for_pass.setInputMethodHints(QtCore.Qt.InputMethodHint.ImhFormattedNumbersOnly)
+            self.input_points_for_pass.setObjectName("points_for_pass")
+            self.gridLayout_2.addWidget(self.input_points_for_pass, 4, 1, 1, 1)
+
+            self.label_max_points = QtWidgets.QLabel(parent=self.centralwidget)
+            self.label_max_points.setObjectName("label_max_pts")
+            self.gridLayout_2.addWidget(self.label_max_points, 3, 0, 1, 1)
+            self.label_pts_for_pass = QtWidgets.QLabel(parent=self.centralwidget)
+            self.label_pts_for_pass.setObjectName("label_pts_for_pass")
+            self.gridLayout_2.addWidget(self.label_pts_for_pass, 4, 0, 1, 1)
+            self.label_pts_for_max = QtWidgets.QLabel(parent=self.centralwidget)
+            self.label_pts_for_max.setObjectName("label_pts_for_max")
+            self.gridLayout_2.addWidget(self.label_pts_for_max, 4, 2, 1, 1)
+
+            self.label_max_points.setText(_translate("WindowExamDetails", "Maximum Points"))
+            self.label_pts_for_pass.setText(_translate("WindowExamDetails", "Points for Pass"))
+            self.label_pts_for_max.setText(_translate("WindowExamDetails", "Points for Max"))
+
+            display_max_points = str(self.exam.max_points) if hasattr(self.exam, "max_points") else ""
+            display_points_for_max = str(self.exam.points_for_max) if hasattr(self.exam, "points_for_max") else ""
+            display_points_for_pass = str(self.exam.points_for_pass) if hasattr(self.exam, "points_for_pass") else ""
+
+
+            self.input_max_points.setText(_translate("WindowExamDetails", display_max_points))
+            self.input_points_for_max.setText(_translate("WindowExamDetails", display_points_for_max))
+            self.input_points_for_max.setText(_translate("WindowExamDetails", display_points_for_pass))
+
+
         elif exam_type == ExamModeLinear:
             number_additinal_rows = 1
             # move table view and buttons down
@@ -152,11 +206,29 @@ class WindowExamDetail(QMainWindow, Ui_WindowExamDetails):
         else:
             raise RuntimeError(f"[WINDOW EXAM DETAIL] Unknown exam type: {type(self.exam)}")
 
-    def display_fields(self):
+    def display_fields(self, new_type = None):
         """
         Based on the type of the exam, show different fields
         :return:
         """
+
+        # first, delete anything old and display it again
+        self.remove_fields()
+
+        self.gridLayout.addWidget(self.label_exam_name, 0, 0, 1, 1)
+        self.gridLayout_2.addWidget(self.button_export_excel, 4, 1, 1, 1)
+        self.gridLayout_2.addWidget(self.label_exam_type, 1, 0, 1, 1)
+        self.gridLayout_2.addWidget(self.input_examType, 1, 1, 1, 1)
+        self.gridLayout_2.addWidget(self.input_examName, 0, 1, 1, 1)
+        self.gridLayout_2.addWidget(self.label_voluntary, 1, 2, 1, 1)
+        self.gridLayout_2.addWidget(self.label_exam_cat, 0, 2, 1, 1)
+        self.gridLayout_2.addWidget(self.input_voluntary, 1, 3, 1, 2)
+        self.gridLayout_2.addWidget(self.input_examCategory, 0, 3, 1, 2)
+        self.gridLayout_2.addWidget(self.table_points_grades, 3, 0, 1, 7)
+        self.gridLayout_2.addWidget(self.button_generateReport, 4, 4, 1, 1)
+
+
+
         _translate = QtCore.QCoreApplication.translate
         self.input_examName.setText(_translate("WindowExamDetails", self.exam.name))
 
@@ -167,6 +239,8 @@ class WindowExamDetail(QMainWindow, Ui_WindowExamDetails):
         self.input_examType.setCurrentText(self.exam.exam_type())
         self.input_voluntary.addItems(["Yes", "No"])
         self.input_voluntary.setCurrentText("Yes" if self.exam.voluntary else "No")
+
+        exam_type = type(self.exam) if new_type == None else new_type
 
         self.display_fields_examtype(type(self.exam))
 
@@ -296,20 +370,55 @@ class WindowExamDetail(QMainWindow, Ui_WindowExamDetails):
 
     def test_function(self):
 
+
+
+        self.remove_fields()
+        self.gridLayout_2.removeItem(self.gridLayout_2.itemAt(0))
+        return
         raise NotImplementedError
 
 
     def connect_signals(self):
 
-        self.button_generateReport.clicked.connect(self.handle_button_generate_grade_report)
+        try:
+            self.input_max_points.editingFinished.connect(self.update_max_points)
+        except:
+            pass
+        try:
+            self.input_points_for_max.editingFinished.connect(self.update_points_for_max)
+        except:
+            pass
+        try:
+            self.input_max_points.returnPressed.connect(self.disselect_current_widget)
+        except:
+            pass
+        try:
+            self.input_points_for_max.returnPressed.connect(self.disselect_current_widget)
+        except:
+            pass
+        try:
+            self.input_examCategory.currentIndexChanged.connect(self.test_function)
+        except:
+            pass
+        try:
+            self.input_voluntary.currentIndexChanged.connect(self.test_function)
+        except:
+            pass
+        try:
+            self.input_examType.currentIndexChanged.connect(self.handle_exam_type_change)
+        except:
+            pass
+        try:
+            self.button_generateReport.clicked.connect(self.test_function)
+            self.button_generateReport.clicked.connect(self.handle_button_generate_grade_report)
 
-        self.input_max_points.editingFinished.connect(self.update_max_points)
-        self.input_points_for_max.editingFinished.connect(self.update_points_for_max)
-        self.input_max_points.returnPressed.connect(self.disselect_current_widget)
-        self.input_points_for_max.returnPressed.connect(self.disselect_current_widget)
-        self.input_examCategory.currentIndexChanged.connect(self.test_function)
-        self.input_voluntary.currentIndexChanged.connect(self.test_function)
-        self.input_examType.currentIndexChanged.connect(self.handle_exam_type_change)
+        except:
+            pass
+        try:
+            self.button_export_excel.clicked.connect(self.test_function)
+        except:
+            pass
+
 
         def switcher_for_item_change(item):
             if self.ignore_updates:
@@ -332,7 +441,7 @@ class WindowExamDetail(QMainWindow, Ui_WindowExamDetails):
         self.table_points_grades.itemChanged.connect(switcher_for_item_change)
 
     def handle_button_generate_grade_report(self):
-
+        return
 
         raise NotImplementedError
 
@@ -396,7 +505,7 @@ class WindowExamDetail(QMainWindow, Ui_WindowExamDetails):
         print(f"new_type: {new_type}; new_type.name: {new_type.name}; new_text: {new_text}")
 
         # TODO display new fields, fetch data from them -- do something like while try, except until the user put in correct data to initiate new exam type
-        self.display_fields_examtype(new_type)
+        self.display_fields(new_type)
 
         # TODO hardcoded for now
         additional_args = {"points_for_pass": 12}

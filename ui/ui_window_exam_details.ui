@@ -15,94 +15,94 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout_2">
-    <item row="3" column="0" colspan="7">
-     <widget class="QTableWidget" name="table_points_grades">
-      <column>
-       <property name="text">
-        <string>Lastname</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>Firstname</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>Points</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>Grades</string>
-       </property>
-      </column>
-     </widget>
-    </item>
-    <item row="4" column="4">
-     <widget class="QPushButton" name="button_generateReport">
-      <property name="text">
-       <string>Generate Exam Report</string>
-      </property>
-     </widget>
-    </item>
     <item row="0" column="0">
      <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="1">
+       <widget class="QLineEdit" name="input_examName">
+        <property name="inputMask">
+         <string/>
+        </property>
+        <property name="text">
+         <string>&lt;exam_name&gt;</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QLabel" name="label_exam_cat">
+        <property name="text">
+         <string>Exam Category</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="3">
+       <widget class="QComboBox" name="input_examCategory"/>
+      </item>
+      <item row="1" column="3">
+       <widget class="QComboBox" name="input_voluntary"/>
+      </item>
+      <item row="1" column="2">
+       <widget class="QLabel" name="label_voluntary">
+        <property name="text">
+         <string>Voluntary</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QComboBox" name="input_examType"/>
+      </item>
       <item row="0" column="0">
-       <widget class="QLabel" name="label">
+       <widget class="QLabel" name="label_exam_name">
         <property name="text">
          <string>Exam Name</string>
         </property>
        </widget>
       </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_exam_type">
+        <property name="text">
+         <string>Computation Strategy</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0" colspan="4">
+       <widget class="QTableWidget" name="table_points_grades">
+        <column>
+         <property name="text">
+          <string>Lastname</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Firstname</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Points</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Grades</string>
+         </property>
+        </column>
+       </widget>
+      </item>
+      <item row="3" column="0" colspan="2">
+       <widget class="QPushButton" name="button_export_excel">
+        <property name="text">
+         <string>Export Exam as .xlsx</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2" colspan="2">
+       <widget class="QPushButton" name="button_generateReport">
+        <property name="text">
+         <string>Generate Exam Report</string>
+        </property>
+       </widget>
+      </item>
      </layout>
-    </item>
-    <item row="4" column="1">
-     <widget class="QPushButton" name="button_export_excel">
-      <property name="text">
-       <string>Export Exam as .xlsx</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="0">
-     <widget class="QLabel" name="label_3">
-      <property name="text">
-       <string>Computation Strategy</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="1">
-     <widget class="QComboBox" name="input_examType"/>
-    </item>
-    <item row="0" column="1">
-     <widget class="QLineEdit" name="input_examName">
-      <property name="inputMask">
-       <string/>
-      </property>
-      <property name="text">
-       <string>&lt;exam_name&gt;</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="2">
-     <widget class="QLabel" name="label_6">
-      <property name="text">
-       <string>Voluntary</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="2">
-     <widget class="QLabel" name="label_2">
-      <property name="text">
-       <string>Exam Category</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="3" colspan="2">
-     <widget class="QComboBox" name="input_voluntary"/>
-    </item>
-    <item row="0" column="3" colspan="2">
-     <widget class="QComboBox" name="input_examCategory"/>
     </item>
    </layout>
   </widget>
