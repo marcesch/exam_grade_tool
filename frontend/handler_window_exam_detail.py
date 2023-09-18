@@ -1,6 +1,6 @@
-from PyQt6 import QtCore, QtWidgets
+from PyQt6 import QtCore, QtWidgets, QtGui
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QColor
+from PyQt6.QtGui import QColor, QPalette
 from PyQt6.QtWidgets import QMainWindow, QTableWidgetItem, QApplication
 
 from backend.classes import Class
@@ -32,14 +32,14 @@ class WindowExamDetail(QMainWindow, Ui_WindowExamDetails):
         # fields
         self.class_obj = class_obj
         self.exam = self.class_obj.get_exam(exam_name)
+        self.new_type = type(self.exam)
 
         self.window().setWindowTitle(f"Exam {self.exam.name} (class {self.exam.classname}, {self.exam.term.upper}{self.exam.year}")
-
-
 
         # windows to be opened from here
 
         self.populate_list_view()
+        self.populate_q_boxes()
         self.display_fields()
         self.connect_signals()
         self.setup_finished = True
@@ -97,58 +97,69 @@ class WindowExamDetail(QMainWindow, Ui_WindowExamDetails):
             except:
                 self.table_points_grades.setItem(row_position, 3, QTableWidgetItem(""))
 
+    def populate_q_boxes(self):
+        """
+        Adds data to q_boxes (only needs to be done once, hence separated. Later on, only display the qboxes
+        :return:
+        """
+
+        self.input_examCategory.addItems([cat.name for cat in self.class_obj.categories])
+        self.input_examCategory.setCurrentText(self.exam.category.name)
+        exam_types_dict = Exam.show_exam_types()
+        self.input_examType.addItems(exam_types_dict.keys())
+        self.input_examType.setCurrentText(self.exam.exam_type())
+        self.input_voluntary.addItems(["Yes", "No"])
+        self.input_voluntary.setCurrentText("Yes" if self.exam.voluntary else "No")
+
     def remove_fields(self):
         """
         Removes any "old" fields in the gridlayout
         :return:
         """
 
-        while self.gridLayout_2.count() > 4:
-            print(f"here {self.gridLayout_2.count()}")
+        for i in reversed(range(self.gridLayout.count())):
+            widget = self.gridLayout.itemAt(i).widget()
+            self.gridLayout.removeWidget(widget)
+            widget.setParent(None)
 
-            widget = self.gridLayout_2.itemAt(0)
-            self.gridLayout_2.removeItem(widget)
-
-
-
+        return
 
 
-    def display_fields_examtype(self, new_type):
-
+    def display_fields_examtype(self):
         _translate = QtCore.QCoreApplication.translate
-        exam_type = type(self.exam) if new_type == None else new_type
-        print(exam_type)
+        exam_type = type(self.exam) if self.new_type == None else self.new_type
+        print(f"[DEBUG HERE] Exam type: {self.new_type}")
         if not issubclass(exam_type, Exam):
             raise RuntimeError(f"[WINDOW EXAM DETAILS] New_type must be a valid subclass of Exam (got {new_type}")
             # display different fields based on exam type
         if exam_type == ExamModeLinearWithPassingPoints:
             number_additinal_rows = 2
-            self.gridLayout_2.addWidget(self.table_points_grades, 3 + number_additinal_rows, 0, 1, 7)
-            self.gridLayout_2.addWidget(self.button_generateReport, 4 + number_additinal_rows, 4, 1, 1)
-            self.gridLayout_2.addWidget(self.button_export_excel, 4 + number_additinal_rows, 1, 1, 1)
+            self.gridLayout.addWidget(self.table_points_grades, 3 + number_additinal_rows, 0, 1, 7)
+            self.gridLayout.addWidget(self.button_generateReport, 4 + number_additinal_rows, 4, 1, 1)
+            self.gridLayout.addWidget(self.button_export_excel, 4 + number_additinal_rows, 1, 1, 1)
 
             self.input_max_points = QtWidgets.QLineEdit(parent=self.centralwidget)
             self.input_max_points.setInputMethodHints(QtCore.Qt.InputMethodHint.ImhFormattedNumbersOnly)
             self.input_max_points.setObjectName("max_points")
-            self.gridLayout_2.addWidget(self.input_max_points, 3, 1, 1, 1)
+            self.gridLayout.addWidget(self.input_max_points, 3, 1, 1, 1)
             self.input_points_for_max = QtWidgets.QLineEdit(parent=self.centralwidget)
             self.input_points_for_max.setInputMethodHints(QtCore.Qt.InputMethodHint.ImhFormattedNumbersOnly)
             self.input_points_for_max.setObjectName("points_for_max")
-            self.gridLayout_2.addWidget(self.input_points_for_max, 4, 4, 1, 1)
+            self.gridLayout.addWidget(self.input_points_for_max, 4, 4, 1, 1)
             self.input_points_for_pass = QtWidgets.QLineEdit(parent=self.centralwidget)
             self.input_points_for_pass.setInputMethodHints(QtCore.Qt.InputMethodHint.ImhFormattedNumbersOnly)
             self.input_points_for_pass.setObjectName("points_for_pass")
-            self.gridLayout_2.addWidget(self.input_points_for_pass, 4, 1, 1, 1)
+            self.gridLayout.addWidget(self.input_points_for_pass, 4, 1, 1, 1)
 
             self.label_max_points = QtWidgets.QLabel(parent=self.centralwidget)
             self.label_max_points.setObjectName("label_max_pts")
-            self.gridLayout_2.addWidget(self.label_max_points, 3, 0, 1, 1)
+            self.gridLayout.addWidget(self.label_max_points, 3, 0, 1, 1)
             self.label_pts_for_pass = QtWidgets.QLabel(parent=self.centralwidget)
             self.label_pts_for_pass.setObjectName("label_pts_for_pass")
-            self.gridLayout_2.addWidget(self.label_pts_for_pass, 4, 0, 1, 1)
+            self.gridLayout.addWidget(self.label_pts_for_pass, 4, 0, 1, 1)
             self.label_pts_for_max = QtWidgets.QLabel(parent=self.centralwidget)
             self.label_pts_for_max.setObjectName("label_pts_for_max")
-            self.gridLayout_2.addWidget(self.label_pts_for_max, 4, 2, 1, 1)
+            self.gridLayout.addWidget(self.label_pts_for_max, 4, 2, 1, 1)
 
             self.label_max_points.setText(_translate("WindowExamDetails", "Maximum Points"))
             self.label_pts_for_pass.setText(_translate("WindowExamDetails", "Points for Pass"))
@@ -157,7 +168,6 @@ class WindowExamDetail(QMainWindow, Ui_WindowExamDetails):
             display_max_points = str(self.exam.max_points) if hasattr(self.exam, "max_points") else ""
             display_points_for_max = str(self.exam.points_for_max) if hasattr(self.exam, "points_for_max") else ""
             display_points_for_pass = str(self.exam.points_for_pass) if hasattr(self.exam, "points_for_pass") else ""
-
 
             self.input_max_points.setText(_translate("WindowExamDetails", display_max_points))
             self.input_points_for_max.setText(_translate("WindowExamDetails", display_points_for_max))
@@ -168,25 +178,25 @@ class WindowExamDetail(QMainWindow, Ui_WindowExamDetails):
             number_additinal_rows = 1
             # move table view and buttons down
             # TODO quite  alot of hard coding for the position of the widgets. Could be solved more elegantly
-            self.gridLayout_2.addWidget(self.table_points_grades, 3 + number_additinal_rows, 0, 1, 7)
-            self.gridLayout_2.addWidget(self.button_generateReport, 4 + number_additinal_rows, 4, 1, 1)
-            self.gridLayout_2.addWidget(self.button_export_excel, 4 + number_additinal_rows, 1, 1, 1)
+            self.gridLayout.addWidget(self.table_points_grades, 3 + number_additinal_rows, 0, 1, 7)
+            self.gridLayout.addWidget(self.button_generateReport, 4 + number_additinal_rows, 4, 1, 1)
+            self.gridLayout.addWidget(self.button_export_excel, 4 + number_additinal_rows, 1, 1, 1)
 
             self.input_points_for_max = QtWidgets.QLineEdit(parent=self.centralwidget)
             self.input_points_for_max.setInputMethodHints(QtCore.Qt.InputMethodHint.ImhFormattedNumbersOnly)
             self.input_points_for_max.setObjectName("points_for_max")
-            self.gridLayout_2.addWidget(self.input_points_for_max, 3, 4, 1, 1)
+            self.gridLayout.addWidget(self.input_points_for_max, 3, 4, 1, 1)
             self.input_max_points = QtWidgets.QLineEdit(parent=self.centralwidget)
             self.input_max_points.setInputMethodHints(QtCore.Qt.InputMethodHint.ImhFormattedNumbersOnly)
             self.input_max_points.setObjectName("max_points")
-            self.gridLayout_2.addWidget(self.input_max_points, 3, 1, 1, 1)
+            self.gridLayout.addWidget(self.input_max_points, 3, 1, 1, 1)
 
             self.label_max_points = QtWidgets.QLabel(parent=self.centralwidget)
             self.label_max_points.setObjectName("label_4")
-            self.gridLayout_2.addWidget(self.label_max_points, 3, 0, 1, 1)
+            self.gridLayout.addWidget(self.label_max_points, 3, 0, 1, 1)
             self.label_pts_for_max = QtWidgets.QLabel(parent=self.centralwidget)
             self.label_pts_for_max.setObjectName("label_5")
-            self.gridLayout_2.addWidget(self.label_pts_for_max, 3, 2, 1, 1)
+            self.gridLayout.addWidget(self.label_pts_for_max, 3, 2, 1, 1)
 
             self.label_max_points.setText(_translate("WindowExamDetails", "Maximum Points"))
             self.label_pts_for_max.setText(_translate("WindowExamDetails", "Points for Max"))
@@ -212,37 +222,25 @@ class WindowExamDetail(QMainWindow, Ui_WindowExamDetails):
         :return:
         """
 
-        # first, delete anything old and display it again
+        # remove anything old first
         self.remove_fields()
 
         self.gridLayout.addWidget(self.label_exam_name, 0, 0, 1, 1)
-        self.gridLayout_2.addWidget(self.button_export_excel, 4, 1, 1, 1)
-        self.gridLayout_2.addWidget(self.label_exam_type, 1, 0, 1, 1)
-        self.gridLayout_2.addWidget(self.input_examType, 1, 1, 1, 1)
-        self.gridLayout_2.addWidget(self.input_examName, 0, 1, 1, 1)
-        self.gridLayout_2.addWidget(self.label_voluntary, 1, 2, 1, 1)
-        self.gridLayout_2.addWidget(self.label_exam_cat, 0, 2, 1, 1)
-        self.gridLayout_2.addWidget(self.input_voluntary, 1, 3, 1, 2)
-        self.gridLayout_2.addWidget(self.input_examCategory, 0, 3, 1, 2)
-        self.gridLayout_2.addWidget(self.table_points_grades, 3, 0, 1, 7)
-        self.gridLayout_2.addWidget(self.button_generateReport, 4, 4, 1, 1)
-
-
+        self.gridLayout.addWidget(self.button_export_excel, 4, 1, 1, 1)
+        self.gridLayout.addWidget(self.label_exam_type, 1, 0, 1, 1)
+        self.gridLayout.addWidget(self.input_examType, 1, 1, 1, 1)
+        self.gridLayout.addWidget(self.input_examName, 0, 1, 1, 1)
+        self.gridLayout.addWidget(self.label_voluntary, 1, 2, 1, 1)
+        self.gridLayout.addWidget(self.label_exam_cat, 0, 2, 1, 1)
+        self.gridLayout.addWidget(self.input_voluntary, 1, 3, 1, 2)
+        self.gridLayout.addWidget(self.input_examCategory, 0, 3, 1, 2)
+        self.gridLayout.addWidget(self.table_points_grades, 3, 0, 1, 7)
+        self.gridLayout.addWidget(self.button_generateReport, 4, 4, 1, 1)
 
         _translate = QtCore.QCoreApplication.translate
         self.input_examName.setText(_translate("WindowExamDetails", self.exam.name))
 
-        self.input_examCategory.addItems([cat.name for cat in self.class_obj.categories])
-        self.input_examCategory.setCurrentText(self.exam.category.name)
-        exam_types_dict = Exam.show_exam_types()
-        self.input_examType.addItems(exam_types_dict.keys())
-        self.input_examType.setCurrentText(self.exam.exam_type())
-        self.input_voluntary.addItems(["Yes", "No"])
-        self.input_voluntary.setCurrentText("Yes" if self.exam.voluntary else "No")
-
-        exam_type = type(self.exam) if new_type == None else new_type
-
-        self.display_fields_examtype(type(self.exam))
+        self.display_fields_examtype()
 
         # TODO show average over class (points and grades)
 
@@ -268,6 +266,8 @@ class WindowExamDetail(QMainWindow, Ui_WindowExamDetails):
             self.input_max_points.setText(str(self.exam.max_points))
         finally:
             self.update_student_point_warnings()
+            self.mark_mandatory_fields_missing()
+
 
 
     def update_table_data(self):
@@ -367,13 +367,19 @@ class WindowExamDetail(QMainWindow, Ui_WindowExamDetails):
         except:
             self.input_points_for_max.setText(str(self.exam.points_for_max))
         self.ignore_updates = False
+        self.mark_mandatory_fields_missing()
+
+    def update_points_for_pass(self):
+
+        self.mark_mandatory_fields_missing()
+        raise NotImplementedError
 
     def test_function(self):
 
 
 
         self.remove_fields()
-        self.gridLayout_2.removeItem(self.gridLayout_2.itemAt(0))
+        self.gridLayout.removeItem(self.gridLayout.itemAt(0))
         return
         raise NotImplementedError
 
@@ -388,6 +394,11 @@ class WindowExamDetail(QMainWindow, Ui_WindowExamDetails):
             self.input_points_for_max.editingFinished.connect(self.update_points_for_max)
         except:
             pass
+        try:
+            self.input_points_for_pass.editingFinished.connect(self.update_points_for_pass)
+        except:
+            pass
+
         try:
             self.input_max_points.returnPressed.connect(self.disselect_current_widget)
         except:
@@ -494,6 +505,26 @@ class WindowExamDetail(QMainWindow, Ui_WindowExamDetails):
         self.table_points_grades.setItem(row, 3, QTableWidgetItem(str(self.exam.grades[student])))
         self.ignore_updates = False
 
+    def get_mandatory_fields(self):
+        """
+        Returns a list of all mandatory fields for a given self.new_type, which can be used to inform the user that they should fill in more data.
+        :return:
+        """
+
+        mandatory_fields = [self.input_examName]
+
+        print(f"DBEUG HERE {self.new_type}")
+
+        if self.new_type == ExamModeLinear:
+            mandatory_fields += [self.input_max_points, self.input_points_for_max]
+        elif self.new_type == ExamModeLinearWithPassingPoints:
+            mandatory_fields += [self.input_max_points, self.input_points_for_max, self.input_points_for_pass]
+        else:
+            raise NotImplementedError
+
+        print(mandatory_fields)
+        return mandatory_fields
+
     def handle_exam_type_change(self):
         """
         Changes type of self.exam, invokes display_fields
@@ -502,15 +533,45 @@ class WindowExamDetail(QMainWindow, Ui_WindowExamDetails):
 
         new_text = self.input_examType.currentText()
         new_type = Exam.exam_types[new_text]
-        print(f"new_type: {new_type}; new_type.name: {new_type.name}; new_text: {new_text}")
+        print(f"[WINDOW EXAM DETAIL] new_type: {new_type}; new_type.name: {new_type.name}; new_text: {new_text} // Old type; {self.exam.exam_type()}")
 
-        # TODO display new fields, fetch data from them -- do something like while try, except until the user put in correct data to initiate new exam type
-        self.display_fields(new_type)
+        # signal the application to show the fields corresponding to the new_type
+        self.new_type = new_type
+        self.display_fields()
+
+        # todo fetch data from new fields in a reasonable manner
+
+        # mark gui elements as temporarily disabled / ... until the necessary data was entered
+        self.mark_mandatory_fields_missing()
 
         # TODO hardcoded for now
         additional_args = {"points_for_pass": 12}
 
+        # if that has failed, reset everything back to how it was
+        try:
+            self.exam = self.class_obj.change_exam_type(self.exam, new_type.name, additional_args)
+        except:
+            self.new_type = type(self.exam)
 
-        self.exam = self.class_obj.change_exam_type(self.exam, new_type.name, additional_args)
 
 
+    def mark_mandatory_fields_missing(self):
+        """
+        Colors certain fields red and disables some features if mandatory fields are missing
+        :return:
+        """
+
+        empty_widgets = []
+        for widgets in self.get_mandatory_fields():
+            # color the mandatory fields
+            if widgets.text() != "":
+                continue
+            empty_widgets.append(widgets)
+            palette = QApplication.palette()
+            background_color = QColor(255, 0, 0)  # Red color (adjust as needed)
+            print(type(palette.base()))
+            palette.setColor(QPalette.ColorRole.Base, background_color)
+            widgets.setPalette(palette)
+
+        if empty_widgets != []:
+            self.table_points_grades.setDisabled(True)
